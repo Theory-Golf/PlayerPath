@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin Loft Performance Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ivory: #fafaf8;
+            --cream: #f5f4f0;
+            --charcoal: #2c3333;
+            --forest: #2d5016;
+            --forest-light: #3d6b22;
+            --gold: #b8956a;
+            --gold-dark: #9a7a55;
+            --sand: #d4c5b0;
+            --rust: #8b5a3c;
+            --text-primary: #2c3333;
+            --text-secondary: #6b7280;
+            --border-light: #e8e6e1;
+            --shadow-sm: rgba(44, 51, 51, 0.06);
+            --shadow-md: rgba(44, 51, 51, 0.1);
+            --shadow-lg: rgba(44, 51, 51, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ivory);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: var(--charcoal);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 2px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 1px 3px var(--shadow-sm);
+        }
+
+        .card h2 {
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--charcoal);
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .level-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .level-btn {
+            background: white;
+            border: 1.5px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 1.5rem 1rem;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.875rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .level-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--forest);
+            transform: scaleX(0);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .level-btn:hover {
+            border-color: var(--forest);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow-md);
+        }
+
+        .level-btn:hover::before {
+            transform: scaleX(1);
+        }
+
+        .level-btn.active {
+            border-color: var(--forest);
+            background: linear-gradient(to bottom, #fafaf8, #f8f7f4);
+            box-shadow: 0 2px 8px var(--shadow-md);
+        }
+
+        .level-btn.active::before {
+            transform: scaleX(1);
+        }
+
+        .level-btn .level-number {
+            display: block;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--charcoal);
+        }
+
+        .level-btn .threshold {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            margin-top: 0.25rem;
+        }
+
+        .level-btn .name {
+            display: block;
+            color: var(--forest);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.75rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.625rem;
+            color: var(--charcoal);
+            font-weight: 500;
+            font-size: 0.875rem;
+            letter-spacing: 0.01em;
+        }
+
+        .input-group select, .input-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--cream);
+            border: 1px solid var(--border-light);
+            border-radius: 2px;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .input-group select:focus, .input-group input:focus {
+            outline: none;
+            border-color: var(--forest);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.08);
+        }
+
+        .distance-mode-toggle {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 0.875rem;
+            background: white;
+            border: 1.5px solid var(--border-light);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .toggle-btn:hover {
+            border-color: var(--forest);
+        }
+
+        .toggle-btn.active {
+            background: var(--forest);
+            color: white;
+            border-color: var(--forest);
+        }
+
+        .shot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .shot-input {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shot-input label {
+            margin-bottom: 0.625rem;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+
+        .shot-input input {
+            width: 100%;
+            padding: 0.875rem 0.5rem;
+            text-align: center;
+            font-size: 1.125rem;
+            font-weight: 600;
+            background: white;
+            border: 1.5px solid var(--border-light);
+            border-radius: 2px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .shot-input input:focus {
+            outline: none;
+            border-color: var(--forest);
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.08);
+        }
+
+        .shot-input input.in-range {
+            border-color: var(--forest);
+            background: rgba(45, 80, 22, 0.04);
+        }
+
+        .shot-input input.out-of-range {
+            border-color: var(--rust);
+            background: rgba(139, 90, 60, 0.04);
+        }
+
+        .btn {
+            background: var(--forest);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 2px;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        .btn:hover {
+            background: var(--forest-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--shadow-md);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--charcoal);
+            border: 1.5px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--cream);
+            border-color: var(--charcoal);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--cream);
+            padding: 2rem 1.5rem;
+            border-radius: 2px;
+            border: 1px solid var(--border-light);
+            text-align: center;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.075em;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 600;
+            font-family: 'Cormorant Garamond', serif;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-value.success { color: var(--forest); }
+        .stat-value.warning { color: var(--gold-dark); }
+        .stat-value.danger { color: var(--rust); }
+
+        .assessment {
+            padding: 2rem;
+            border-radius: 2px;
+            border-left: 3px solid;
+            margin-top: 2rem;
+            background: white;
+        }
+
+        .assessment.passed {
+            background: rgba(45, 80, 22, 0.04);
+            border-color: var(--forest);
+        }
+
+        .assessment.conditional {
+            background: rgba(184, 149, 106, 0.08);
+            border-color: var(--gold-dark);
+        }
+
+        .assessment.failed {
+            background: rgba(139, 90, 60, 0.04);
+            border-color: var(--rust);
+        }
+
+        .assessment h3 {
+            margin-bottom: 0.875rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .assessment p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .session-info-box {
+            background: var(--cream);
+            padding: 1.5rem;
+            border-radius: 2px;
+            border: 1px solid var(--border-light);
+            margin-bottom: 2rem;
+        }
+
+        .session-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.25rem;
+            font-size: 0.875rem;
+        }
+
+        .session-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .session-info-label {
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .session-info-value {
+            color: var(--charcoal);
+            font-weight: 600;
+        }
+
+        .session-info-value.highlight {
+            color: var(--forest);
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            background: var(--cream);
+            padding: 1.5rem;
+            border-radius: 2px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            box-shadow: 0 2px 8px var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .history-item .date {
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 400;
+        }
+
+        .history-item .success-rate {
+            font-weight: 600;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.125rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container { 
+                padding: 2rem 1rem; 
+            }
+            .header h1 { 
+                font-size: 2.5rem; 
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            .shot-grid { 
+                grid-template-columns: repeat(5, 1fr);
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Spin Loft Tracker</h1>
+            <p>Performance Analysis • Trajectory Control Excellence</p>
+        </div>
+
+        <div class="card">
+            <h2>Skill Level</h2>
+            <div class="level-selector" id="levelSelector"></div>
+        </div>
+
+        <div class="card">
+            <h2>Session Configuration</h2>
+            <div class="input-group">
+                <label>Wedge Selection</label>
+                <select id="clubSelect">
+                    <option value="60">60° Lob Wedge</option>
+                    <option value="56" selected>56° Sand Wedge</option>
+                    <option value="50">50° Gap Wedge</option>
+                    <option value="46">46° Pitching Wedge</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Distance Mode</label>
+                <div class="distance-mode-toggle">
+                    <button class="toggle-btn active" id="setDistanceBtn" onclick="setDistanceMode('set')">Set Distance</button>
+                    <button class="toggle-btn" id="randomDistanceBtn" onclick="setDistanceMode('random')">Random Distance</button>
+                </div>
+            </div>
+
+            <div id="setDistanceDiv">
+                <div class="input-group">
+                    <label>Target Distance (50-100 yards)</label>
+                    <input type="number" id="setDistance" value="75" min="50" max="100">
+                </div>
+            </div>
+
+            <div id="randomDistanceDiv" class="hidden">
+                <div class="input-group">
+                    <label>Random Distance for This Session</label>
+                    <input type="number" id="randomDistance" readonly style="background: white; cursor: not-allowed;">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Performance Data Entry</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9375rem;" id="targetInfo"></p>
+            
+            <div class="shot-grid" id="shotGrid"></div>
+
+            <div style="margin-top: 2.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn" onclick="calculateResults()">Analyze Session</button>
+                <button class="btn btn-secondary" onclick="resetShots()">Clear Data</button>
+                <button class="btn btn-secondary" onclick="newSession()">New Session</button>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="hidden">
+            <div class="card">
+                <h2>Session Analysis</h2>
+                
+                <div class="session-info-box">
+                    <div class="session-info-grid">
+                        <div class="session-info-item">
+                            <span class="session-info-label">Skill Level</span>
+                            <strong id="sessionLevel" class="session-info-value highlight"></strong>
+                        </div>
+                        <div class="session-info-item">
+                            <span class="session-info-label">Wedge</span>
+                            <strong id="sessionClub" class="session-info-value"></strong>
+                        </div>
+                        <div class="session-info-item">
+                            <span class="session-info-label">Distance</span>
+                            <strong id="sessionDistance" class="session-info-value"></strong>
+                        </div>
+                        <div class="session-info-item">
+                            <span class="session-info-label">Session Date</span>
+                            <strong id="sessionDate" class="session-info-value"></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid"></div>
+                <div id="assessmentDiv"></div>
+            </div>
+
+            <div class="card" id="historyCard">
+                <h2>Performance History</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9375rem;">
+                    Complete session archive, most recent first
+                </p>
+                <ul class="history-list" id="historyList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const LEVELS = [
+            { level: 1, name: 'Foundation', threshold: 10, range: [36, 56] },
+            { level: 2, name: 'Developing', threshold: 8, range: [38, 54] },
+            { level: 3, name: 'Competent', threshold: 6, range: [40, 52] },
+            { level: 4, name: 'Advanced', threshold: 4, range: [42, 50] },
+            { level: 5, name: 'Expert', threshold: 3, range: [43, 49] },
+            { level: 6, name: 'Tour Pro', threshold: 2, range: [44, 48] }
+        ];
+
+        const TARGET_SPIN_LOFT = 46;
+        let currentLevel = 1;
+        let distanceMode = 'set';
+        let sessionHistory = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHistory();
+            renderLevelSelector();
+            renderShotInputs();
+            updateTargetInfo();
+        });
+
+        function loadHistory() {
+            const saved = localStorage.getItem('spinLoftHistory');
+            if (saved) {
+                sessionHistory = JSON.parse(saved);
+            }
+        }
+
+        function saveHistory() {
+            localStorage.setItem('spinLoftHistory', JSON.stringify(sessionHistory));
+        }
+
+        function renderLevelSelector() {
+            const selector = document.getElementById('levelSelector');
+            selector.innerHTML = LEVELS.map(level => `
+                <button class="level-btn ${currentLevel === level.level ? 'active' : ''}" 
+                        onclick="selectLevel(${level.level})">
+                    <span class="level-number">L${level.level}</span>
+                    <span class="name">${level.name}</span>
+                    <span class="threshold">±${level.threshold}°</span>
+                </button>
+            `).join('');
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+            renderLevelSelector();
+            updateTargetInfo();
+            validateAllShots();
+        }
+
+        function setDistanceMode(mode) {
+            distanceMode = mode;
+            
+            const setBtn = document.getElementById('setDistanceBtn');
+            const randomBtn = document.getElementById('randomDistanceBtn');
+            const setDiv = document.getElementById('setDistanceDiv');
+            const randomDiv = document.getElementById('randomDistanceDiv');
+            
+            if (mode === 'set') {
+                setBtn.classList.add('active');
+                randomBtn.classList.remove('active');
+                setDiv.classList.remove('hidden');
+                randomDiv.classList.add('hidden');
+            } else {
+                setBtn.classList.remove('active');
+                randomBtn.classList.add('active');
+                setDiv.classList.add('hidden');
+                randomDiv.classList.remove('hidden');
+                generateRandomDistance();
+            }
+        }
+
+        function generateRandomDistance() {
+            const distance = Math.floor(Math.random() * 51) + 50;
+            document.getElementById('randomDistance').value = distance;
+        }
+
+        function renderShotInputs() {
+            const grid = document.getElementById('shotGrid');
+            grid.innerHTML = Array.from({length: 10}, (_, i) => `
+                <div class="shot-input">
+                    <label>Shot ${i + 1}</label>
+                    <input type="number" id="shot${i}" step="0.5" placeholder="°" 
+                           oninput="validateShot(${i})">
+                </div>
+            `).join('');
+        }
+
+        function updateTargetInfo() {
+            const level = LEVELS[currentLevel - 1];
+            const info = document.getElementById('targetInfo');
+            info.innerHTML = `<strong>Objective:</strong> Maintain ${level.range[0]}°-${level.range[1]}° spin loft (±${level.threshold}° from ${TARGET_SPIN_LOFT}° target)`;
+        }
+
+        function validateShot(index) {
+            const input = document.getElementById(`shot${index}`);
+            const value = parseFloat(input.value);
+            const level = LEVELS[currentLevel - 1];
+            
+            input.classList.remove('in-range', 'out-of-range');
+            
+            if (!isNaN(value) && input.value !== '') {
+                if (value >= level.range[0] && value <= level.range[1]) {
+                    input.classList.add('in-range');
+                } else {
+                    input.classList.add('out-of-range');
+                }
+            }
+        }
+
+        function validateAllShots() {
+            for (let i = 0; i < 10; i++) {
+                validateShot(i);
+            }
+        }
+
+        function calculateResults() {
+            const spinLofts = [];
+            for (let i = 0; i < 10; i++) {
+                const value = document.getElementById(`shot${i}`).value;
+                if (value !== '') {
+                    spinLofts.push(parseFloat(value));
+                }
+            }
+
+            if (spinLofts.length < 10) {
+                alert('Please enter all 10 spin loft values');
+                return;
+            }
+
+            const level = LEVELS[currentLevel - 1];
+            const club = parseInt(document.getElementById('clubSelect').value);
+            const distance = distanceMode === 'set' 
+                ? parseInt(document.getElementById('setDistance').value)
+                : parseInt(document.getElementById('randomDistance').value);
+
+            const mean = spinLofts.reduce((a, b) => a + b, 0) / spinLofts.length;
+            const variance = spinLofts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / spinLofts.length;
+            const sd = Math.sqrt(variance);
+
+            const shotsInRange = spinLofts.filter(sl => 
+                sl >= level.range[0] && sl <= level.range[1]
+            ).length;
+            const successRate = (shotsInRange / spinLofts.length) * 100;
+
+            const result = {
+                date: new Date().toISOString(),
+                level: currentLevel,
+                levelName: level.name,
+                club: club,
+                distance: distance,
+                distanceMode: distanceMode,
+                spinLofts: spinLofts,
+                mean: mean.toFixed(1),
+                sd: sd.toFixed(2),
+                shotsInRange: shotsInRange,
+                successRate: successRate.toFixed(0),
+                totalShots: spinLofts.length,
+                threshold: level.threshold,
+                range: level.range
+            };
+
+            sessionHistory.push(result);
+            saveHistory();
+            displayResults(result);
+        }
+
+        function displayResults(result) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            const date = new Date(result.date);
+            document.getElementById('sessionLevel').textContent = `Level ${result.level} — ${result.levelName}`;
+            document.getElementById('sessionClub').textContent = `${result.club}°`;
+            document.getElementById('sessionDistance').textContent = `${result.distance} yards`;
+            document.getElementById('sessionDate').textContent = date.toLocaleDateString('en-US', { 
+                month: 'long', day: 'numeric', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit' 
+            });
+
+            const sdClass = result.sd < 3 ? 'success' : result.sd <= 5 ? 'warning' : 'danger';
+            const successRateClass = result.successRate >= 80 ? 'success' : 
+                                     result.successRate >= 50 ? 'warning' : 'danger';
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Mean Spin Loft</div>
+                    <div class="stat-value">${result.mean}°</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Standard Deviation</div>
+                    <div class="stat-value ${sdClass}">${result.sd}°</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Shots In Range</div>
+                    <div class="stat-value success">${result.shotsInRange}/10</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value ${successRateClass}">${result.successRate}%</div>
+                </div>
+            `;
+
+            let assessment;
+            if (result.successRate >= 80) {
+                assessment = {
+                    type: 'passed',
+                    title: 'Excellent Consistency',
+                    message: `Your success rate of ${result.successRate}% meets the advancement criteria. Complete one additional session with ≥80% success to advance to Level ${currentLevel + 1}.`
+                };
+            } else if (result.successRate >= 50) {
+                assessment = {
+                    type: 'conditional',
+                    title: 'Approaching Target',
+                    message: `Your success rate of ${result.successRate}% shows progress. Continue practicing at this level to achieve the 80% threshold required for advancement.`
+                };
+            } else {
+                assessment = {
+                    type: 'failed',
+                    title: 'Additional Practice Recommended',
+                    message: `Your success rate of ${result.successRate}% is below the 50% maintenance threshold. Consider returning to Level ${Math.max(1, currentLevel - 1)} to rebuild consistency fundamentals.`
+                };
+            }
+
+            const assessmentDiv = document.getElementById('assessmentDiv');
+            assessmentDiv.innerHTML = `
+                <div class="assessment ${assessment.type}">
+                    <h3>${assessment.title}</h3>
+                    <p>${assessment.message}</p>
+                </div>
+            `;
+
+            displayHistory();
+        }
+
+        function displayHistory() {
+            const sortedHistory = [...sessionHistory].sort((a, b) => 
+                new Date(b.date) - new Date(a.date)
+            );
+
+            if (sortedHistory.length > 0) {
+                document.getElementById('historyCard').classList.remove('hidden');
+                
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = sortedHistory.map(session => {
+                    const successRateClass = session.successRate >= 80 ? 'success' : 
+                                            session.successRate >= 50 ? 'warning' : 'danger';
+                    const date = new Date(session.date);
+                    
+                    return `
+                        <li class="history-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 0.875rem; margin-bottom: 0.375rem;">
+                                    <span style="background: white; padding: 0.375rem 0.875rem; border-radius: 2px; font-size: 0.75rem; font-family: 'Cormorant Garamond', serif; color: var(--forest); font-weight: 600; border: 1px solid var(--border-light);">
+                                        L${session.level}
+                                    </span>
+                                    <div class="date">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.375rem;">
+                                    ${session.club}° @ ${session.distance}yd • Mean: ${session.mean}° • SD: ${session.sd}° • ${session.shotsInRange}/10 in range
+                                </div>
+                            </div>
+                            <div class="success-rate ${successRateClass}">${session.successRate}%</div>
+                        </li>
+                    `;
+                }).join('');
+            }
+        }
+
+        function resetShots() {
+            for (let i = 0; i < 10; i++) {
+                const input = document.getElementById(`shot${i}`);
+                input.value = '';
+                input.classList.remove('in-range', 'out-of-range');
+            }
+            document.getElementById('resultsSection').classList.add('hidden');
+        }
+
+        function newSession() {
+            resetShots();
+            if (distanceMode === 'random') {
+                generateRandomDistance();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#fafaf8">
+  <title>Wedge Master</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    :root {
+      --ivory: #fafaf8;
+      --cream: #f5f4f0;
+      --forest: #2d5016;
+      --forest-light: #3d6b22;
+      --gold: #b8956a;
+      --gold-light: #c9a87a;
+      --charcoal: #2c3333;
+      --charcoal-light: #4a5454;
+      --sand: #e8e4dc;
+      --rust: #b85c38;
+      --success: #2d5016;
+      --white: #ffffff;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--charcoal);
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    h1, h2, h3, .heading {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    
+    .card {
+      background: var(--white);
+      border-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 2px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 250ms ease;
+      border: none;
+      text-decoration: none;
+    }
+    
+    .btn-primary {
+      background: var(--forest);
+      color: var(--white);
+    }
+    .btn-primary:hover, .btn-primary:active {
+      background: var(--forest-light);
+    }
+    
+    .btn-secondary {
+      background: var(--white);
+      color: var(--charcoal);
+      border: 1px solid var(--sand);
+    }
+    .btn-secondary:hover, .btn-secondary:active {
+      border-color: var(--charcoal-light);
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--charcoal-light);
+    }
+    .btn-ghost:hover {
+      color: var(--charcoal);
+    }
+    
+    .label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--charcoal-light);
+    }
+    
+    .stat-value {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--charcoal);
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 16px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 32px;
+      font-weight: 500;
+      text-align: center;
+      color: var(--charcoal);
+      background: var(--white);
+      border: 1.5px solid var(--sand);
+      border-radius: 2px;
+      outline: none;
+      transition: border-color 250ms ease;
+    }
+    .input-field:focus {
+      border-color: var(--forest);
+    }
+    .input-field::placeholder {
+      color: var(--sand);
+    }
+    
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .text-forest { color: var(--forest); }
+    .text-gold { color: var(--gold); }
+    .text-rust { color: var(--rust); }
+    .text-success { color: var(--success); }
+    .text-muted { color: var(--charcoal-light); }
+    
+    .fade-in {
+      animation: fadeIn 300ms ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // Simple SVG Icons
+    const Icon = ({ name, size = 20 }) => {
+      const icons = {
+        target: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+        trophy: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 5h1.5a2.5 2.5 0 0 0 0-5H18M6 9v6a6 6 0 0 0 12 0V9M6 9h12m-6 13v-4"/></svg>,
+        chevronRight: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m9 18 6-6-6-6"/></svg>,
+        chevronDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m6 9 6 6 6-6"/></svg>,
+        chevronUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m18 15-6-6-6 6"/></svg>,
+        x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+        check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="20 6 9 17 4 12"/></svg>,
+        barChart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 20V10m6 10V4M6 20v-4"/></svg>,
+        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
+        volume: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
+        plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 5v14m-7-7h14"/></svg>,
+        minus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14"/></svg>,
+        trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+        arrowLeft: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m12 19-7-7 7-7M19 12H5"/></svg>,
+        arrowRight: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m12 5 7 7-7 7M5 12h14"/></svg>,
+      };
+      return icons[name] || null;
+    };
+
+    // Storage
+    const storage = {
+      get: (key) => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : null; } catch { return null; } },
+      set: (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } },
+      delete: (key) => { try { localStorage.removeItem(key); return true; } catch { return false; } }
+    };
+
+    // Calculations
+    const calculateProximity = (distMiss, dispMiss) => Math.sqrt(distMiss * distMiss + dispMiss * dispMiss);
+    
+    const calculatePoints = (proximity, level) => {
+      let base;
+      if (proximity <= 2) base = 250;
+      else if (proximity <= 4) base = 235;
+      else if (proximity <= 6) base = 220;
+      else if (proximity <= 8) base = 205;
+      else if (proximity <= 10) base = 190;
+      else if (proximity <= 14) base = 170;
+      else if (proximity <= 18) base = 150;
+      else if (proximity <= 24) base = 125;
+      else if (proximity <= 32) base = 100;
+      else base = 60;
+      return Math.round(base / (1 + (level - 1) * 0.012));
+    };
+
+    const getRating = (points) => {
+      if (points >= 235) return { label: 'Elite', color: 'text-gold' };
+      if (points >= 210) return { label: 'Excellent', color: 'text-forest' };
+      if (points >= 185) return { label: 'Tour Average', color: 'text-forest' };
+      if (points >= 155) return { label: 'Good', color: 'text-charcoal' };
+      if (points >= 120) return { label: 'Fair', color: 'text-muted' };
+      return { label: 'Needs Work', color: 'text-rust' };
+    };
+
+    // Defaults
+    const defaultWedges = [
+      { name: 'PW', fullCarry: 135, threeQuarter: 120, half: 100 },
+      { name: 'GW', fullCarry: 120, threeQuarter: 105, half: 88 },
+      { name: '52°', fullCarry: 108, threeQuarter: 95, half: 78 },
+      { name: '56°', fullCarry: 95, threeQuarter: 82, half: 68 },
+      { name: '60°', fullCarry: 80, threeQuarter: 68, half: 55 },
+    ];
+
+    const getChallengeConfig = (level) => ({
+      targets: 10 + Math.floor(level / 10) * 2,
+      pointsToAdvance: 175 + Math.floor(level / 5) * 5,
+      description: level <= 10 ? 'Beginner' : level <= 25 ? 'Intermediate' : level <= 50 ? 'Advanced' : level <= 75 ? 'Expert' : 'Elite'
+    });
+
+    const formatDate = (d) => {
+      const date = new Date(d);
+      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    };
+
+    // Main App
+    function WedgeMaster() {
+      const [screen, setScreen] = useState('home');
+      const [wedges, setWedges] = useState(defaultWedges);
+      const [challengeLevel, setChallengeLevel] = useState(1);
+      const [practiceMode, setPracticeMode] = useState('premier');
+      const [isLoading, setIsLoading] = useState(true);
+      
+      // Practice state
+      const [currentTarget, setCurrentTarget] = useState(null);
+      const [shotNumber, setShotNumber] = useState(0);
+      const [sessionShots, setSessionShots] = useState([]);
+      const [actualDistance, setActualDistance] = useState('');
+      const [dispersionAmount, setDispersionAmount] = useState('');
+      const [dispersionDirection, setDispersionDirection] = useState(null);
+      const [showResult, setShowResult] = useState(false);
+      const [lastShotResult, setLastShotResult] = useState(null);
+      
+      // Creative mode
+      const [creativeTargets, setCreativeTargets] = useState([80, 95, 110]);
+      const [creativeRounds, setCreativeRounds] = useState(3);
+      
+      // History
+      const [sessionHistory, setSessionHistory] = useState([]);
+      const [lifetimeStats, setLifetimeStats] = useState({ totalSessions: 0, totalShots: 0, avgPoints: 0, bestSession: 0, totalPoints: 0 });
+      const [expandedSession, setExpandedSession] = useState(null);
+
+      // Load data
+      useEffect(() => {
+        const w = storage.get('wm-wedges'); if (w) setWedges(w);
+        const l = storage.get('wm-level'); if (l) setChallengeLevel(l);
+        const h = storage.get('wm-history'); if (h) setSessionHistory(h);
+        const s = storage.get('wm-stats'); if (s) setLifetimeStats(s);
+        const c = storage.get('wm-creative'); if (c) { setCreativeTargets(c.targets || [80,95,110]); setCreativeRounds(c.rounds || 3); }
+        setIsLoading(false);
+      }, []);
+
+      const saveWedges = (w) => { setWedges(w); storage.set('wm-wedges', w); };
+      const saveLevel = (l) => { setChallengeLevel(l); storage.set('wm-level', l); };
+      const saveCreative = () => { storage.set('wm-creative', { targets: creativeTargets, rounds: creativeRounds }); };
+      
+      const saveSession = (data) => {
+        const newHistory = [data, ...sessionHistory].slice(0, 50);
+        setSessionHistory(newHistory);
+        const newStats = {
+          totalSessions: lifetimeStats.totalSessions + 1,
+          totalShots: lifetimeStats.totalShots + data.shots.length,
+          totalPoints: lifetimeStats.totalPoints + data.totalPoints,
+          avgPoints: Math.round((lifetimeStats.totalPoints + data.totalPoints) / (lifetimeStats.totalSessions + 1)),
+          bestSession: Math.max(lifetimeStats.bestSession, data.avgPoints)
+        };
+        setLifetimeStats(newStats);
+        storage.set('wm-history', newHistory);
+        storage.set('wm-stats', newStats);
+      };
+
+      const clearHistory = () => {
+        if (confirm('Clear all session history?')) {
+          setSessionHistory([]);
+          const reset = { totalSessions: 0, totalShots: 0, avgPoints: 0, bestSession: 0, totalPoints: 0 };
+          setLifetimeStats(reset);
+          storage.delete('wm-history');
+          storage.set('wm-stats', reset);
+        }
+      };
+
+      const speakTarget = useCallback((d) => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(`${d} yards`);
+          u.rate = 0.9;
+          window.speechSynthesis.speak(u);
+        }
+      }, []);
+
+      const generateTarget = useCallback(() => {
+        const all = wedges.flatMap(w => [w.fullCarry, w.threeQuarter, w.half]);
+        const min = Math.min(...all) - 10;
+        const max = Math.max(...all) + 5;
+        let t;
+        if (Math.random() > 0.4) {
+          t = all[Math.floor(Math.random() * all.length)] + Math.floor(Math.random() * 7) - 3;
+        } else {
+          t = Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        return Math.max(40, Math.min(150, t));
+      }, [wedges]);
+
+      const startSession = useCallback(() => {
+        setShotNumber(0);
+        setSessionShots([]);
+        setShowResult(false);
+        setLastShotResult(null);
+        setActualDistance('');
+        setDispersionAmount('');
+        setDispersionDirection(null);
+        setScreen('practice');
+        setTimeout(() => {
+          const t = practiceMode === 'premier' ? generateTarget() : creativeTargets[0];
+          setCurrentTarget(t);
+          speakTarget(t);
+          setShotNumber(1);
+        }, 500);
+      }, [practiceMode, generateTarget, creativeTargets, speakTarget]);
+
+      const recordShot = () => {
+        const actual = parseFloat(actualDistance);
+        const dispersion = parseFloat(dispersionAmount) || 0;
+        if (isNaN(actual) || actual < 0) return;
+        if (dispersion > 0 && !dispersionDirection) return;
+        
+        const distanceMiss = actual - currentTarget;
+        const proximity = calculateProximity(Math.abs(distanceMiss), dispersion);
+        const points = calculatePoints(proximity, challengeLevel);
+        const rating = getRating(points);
+        
+        const shotData = {
+          target: currentTarget,
+          actual,
+          distanceMiss: Math.round(distanceMiss * 10) / 10,
+          dispersion,
+          dispersionDir: dispersion > 0 ? dispersionDirection : null,
+          proximity: Math.round(proximity * 10) / 10,
+          points,
+          rating,
+          shotNumber
+        };
+        
+        setLastShotResult(shotData);
+        setSessionShots(prev => [...prev, shotData]);
+        setShowResult(true);
+        setActualDistance('');
+        setDispersionAmount('');
+        setDispersionDirection(null);
+      };
+
+      const nextShot = useCallback(() => {
+        const config = getChallengeConfig(challengeLevel);
+        const total = practiceMode === 'premier' ? config.targets : creativeTargets.length * creativeRounds;
+        
+        if (shotNumber >= total) {
+          const totalPoints = sessionShots.reduce((s, x) => s + x.points, 0);
+          const avgPoints = Math.round(totalPoints / sessionShots.length);
+          const data = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            mode: practiceMode,
+            level: challengeLevel,
+            shots: sessionShots,
+            totalPoints,
+            avgPoints,
+            avgProximity: Math.round(sessionShots.reduce((s, x) => s + x.proximity, 0) / sessionShots.length * 10) / 10,
+            avgDistanceMiss: Math.round(sessionShots.reduce((s, x) => s + Math.abs(x.distanceMiss), 0) / sessionShots.length * 10) / 10,
+            avgDispersion: Math.round(sessionShots.reduce((s, x) => s + x.dispersion, 0) / sessionShots.length * 10) / 10,
+            bestShot: Math.max(...sessionShots.map(x => x.points)),
+            excellentShots: sessionShots.filter(x => x.points >= 210).length
+          };
+          saveSession(data);
+          if (practiceMode === 'premier' && avgPoints >= config.pointsToAdvance) {
+            saveLevel(challengeLevel + 1);
+          }
+          setScreen('results');
+          return;
+        }
+        
+        setShowResult(false);
+        setLastShotResult(null);
+        const t = practiceMode === 'premier' ? generateTarget() : creativeTargets[shotNumber % creativeTargets.length];
+        setCurrentTarget(t);
+        speakTarget(t);
+        setShotNumber(prev => prev + 1);
+      }, [shotNumber, practiceMode, challengeLevel, creativeTargets, creativeRounds, sessionShots, generateTarget, speakTarget]);
+
+      const getSessionStats = useCallback(() => {
+        if (!sessionShots.length) return null;
+        const totalPoints = sessionShots.reduce((s, x) => s + x.points, 0);
+        return {
+          totalPoints,
+          avgPoints: Math.round(totalPoints / sessionShots.length),
+          avgProximity: (sessionShots.reduce((s, x) => s + x.proximity, 0) / sessionShots.length).toFixed(1),
+          avgDistanceMiss: (sessionShots.reduce((s, x) => s + Math.abs(x.distanceMiss), 0) / sessionShots.length).toFixed(1),
+          avgDispersion: (sessionShots.reduce((s, x) => s + x.dispersion, 0) / sessionShots.length).toFixed(1),
+          bestShot: sessionShots.reduce((b, x) => x.points > b.points ? x : b, sessionShots[0]),
+          excellentShots: sessionShots.filter(x => x.points >= 210).length
+        };
+      }, [sessionShots]);
+
+      const checkLevelUp = useCallback(() => {
+        const stats = getSessionStats();
+        if (!stats) return false;
+        return stats.avgPoints >= getChallengeConfig(challengeLevel).pointsToAdvance && practiceMode === 'premier';
+      }, [getSessionStats, challengeLevel, practiceMode]);
+
+      if (isLoading) {
+        return (
+          <div style={{minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)'}}>
+            <div style={{color: 'var(--forest)'}}><Icon name="target" size={40} /></div>
+          </div>
+        );
+      }
+
+      // HOME SCREEN
+      const HomeScreen = () => (
+        <div style={{minHeight: '100vh', background: 'var(--cream)', padding: '24px 20px'}}>
+          <div style={{maxWidth: '420px', margin: '0 auto'}}>
+            <div style={{textAlign: 'center', paddingTop: '32px', paddingBottom: '32px'}}>
+              <div style={{color: 'var(--forest)', marginBottom: '16px'}}><Icon name="target" size={48} /></div>
+              <h1 className="heading" style={{fontSize: '32px', color: 'var(--charcoal)', marginBottom: '4px'}}>Wedge Master</h1>
+              <p style={{color: 'var(--charcoal-light)', fontSize: '14px', letterSpacing: '0.02em'}}>Precision Distance Control</p>
+            </div>
+            
+            <div className="card" style={{padding: '24px', marginBottom: '20px'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                <span className="label">Challenge Level</span>
+                <span style={{color: 'var(--gold)', fontSize: '12px', fontWeight: '500'}}>{getChallengeConfig(challengeLevel).description}</span>
+              </div>
+              <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+                <span className="heading" style={{fontSize: '48px', color: 'var(--charcoal)', lineHeight: 1}}>{challengeLevel}</span>
+                <div style={{flex: 1}}>
+                  <div style={{height: '4px', background: 'var(--sand)', borderRadius: '2px', overflow: 'hidden', marginBottom: '8px'}}>
+                    <div style={{height: '100%', background: 'var(--forest)', width: `${(challengeLevel % 10) * 10}%`, transition: 'width 300ms ease'}} />
+                  </div>
+                  <p style={{fontSize: '12px', color: 'var(--charcoal-light)'}}>{getChallengeConfig(challengeLevel).pointsToAdvance}+ average to advance</p>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px'}}>
+              <button className="btn btn-primary" onClick={() => { setPracticeMode('premier'); startSession(); }} style={{width: '100%', padding: '18px 24px', fontSize: '15px'}}>
+                <Icon name="target" size={18} />
+                Premier Mode — {getChallengeConfig(challengeLevel).targets} Targets
+                <span style={{marginLeft: 'auto', opacity: 0.7}}><Icon name="chevronRight" size={18} /></span>
+              </button>
+              
+              <button className="btn btn-secondary" onClick={() => setScreen('creative')} style={{width: '100%', padding: '16px 24px'}}>
+                <Icon name="settings" size={18} />
+                Creative Mode
+                <span style={{marginLeft: 'auto', opacity: 0.5}}><Icon name="chevronRight" size={18} /></span>
+              </button>
+              
+              <button className="btn btn-secondary" onClick={() => setScreen('history')} style={{width: '100%', padding: '16px 24px'}}>
+                <Icon name="barChart" size={18} />
+                Session History
+                <span style={{marginLeft: 'auto', color: 'var(--charcoal-light)', fontSize: '13px'}}>{sessionHistory.length}</span>
+              </button>
+            </div>
+            
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px'}}>
+              {[
+                { label: 'Sessions', value: lifetimeStats.totalSessions },
+                { label: 'Lifetime Avg', value: lifetimeStats.avgPoints || '—' },
+                { label: 'Total Shots', value: lifetimeStats.totalShots },
+                { label: 'Best Session', value: lifetimeStats.bestSession || '—', highlight: true }
+              ].map((stat, i) => (
+                <div key={i} className="card" style={{padding: '16px 20px'}}>
+                  <div className="label" style={{marginBottom: '4px'}}>{stat.label}</div>
+                  <div className="stat-value" style={{color: stat.highlight ? 'var(--gold)' : 'var(--charcoal)'}}>{stat.value}</div>
+                </div>
+              ))}
+            </div>
+            
+            <button className="btn btn-ghost" onClick={() => setScreen('setup')} style={{width: '100%', fontSize: '13px'}}>
+              <Icon name="settings" size={16} />
+              Edit Wedge Distances
+            </button>
+          </div>
+        </div>
+      );
+
+      // SETUP SCREEN
+      const SetupScreen = () => (
+        <div style={{minHeight: '100vh', background: 'var(--cream)', padding: '24px 20px'}}>
+          <div style={{maxWidth: '420px', margin: '0 auto'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingTop: '8px'}}>
+              <button className="btn btn-ghost" onClick={() => setScreen('home')} style={{padding: '8px'}}><Icon name="x" size={20} /></button>
+              <h2 className="heading" style={{fontSize: '24px'}}>Wedge Setup</h2>
+            </div>
+            <p style={{color: 'var(--charcoal-light)', fontSize: '14px', marginBottom: '24px'}}>Enter your carry distances for each wedge.</p>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+              {wedges.map((w, i) => (
+                <div key={i} className="card" style={{padding: '20px'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
+                    <div style={{width: '44px', height: '44px', borderRadius: '2px', background: 'var(--forest)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '13px'}}>{w.name}</div>
+                    <input type="text" value={w.name} onChange={e => { const u=[...wedges]; u[i].name=e.target.value; setWedges(u); }} style={{flex: 1, border: 'none', outline: 'none', fontSize: '16px', fontWeight: '500', fontFamily: 'Cormorant Garamond, serif', background: 'transparent', color: 'var(--charcoal)'}} />
+                  </div>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px'}}>
+                    {[['fullCarry', 'Full'], ['threeQuarter', '3/4'], ['half', '1/2']].map(([k, label]) => (
+                      <div key={k}>
+                        <label className="label" style={{display: 'block', marginBottom: '6px'}}>{label}</label>
+                        <input type="number" value={w[k]} onChange={e => { const u=[...wedges]; u[i][k]=parseInt(e.target.value)||0; setWedges(u); }} style={{width: '100%', padding: '10px', textAlign: 'center', border: '1.5px solid var(--sand)', borderRadius: '2px', fontSize: '16px', fontFamily: 'Cormorant Garamond, serif', outline: 'none', background: 'var(--ivory)'}} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-primary" onClick={() => { saveWedges(wedges); setScreen('home'); }} style={{width: '100%', marginTop: '24px', padding: '16px'}}>Save & Continue</button>
+          </div>
+        </div>
+      );
+
+      // CREATIVE SCREEN
+      const CreativeScreen = () => (
+        <div style={{minHeight: '100vh', background: 'var(--cream)', padding: '24px 20px'}}>
+          <div style={{maxWidth: '420px', margin: '0 auto'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingTop: '8px'}}>
+              <button className="btn btn-ghost" onClick={() => setScreen('home')} style={{padding: '8px'}}><Icon name="x" size={20} /></button>
+              <h2 className="heading" style={{fontSize: '24px'}}>Creative Mode</h2>
+            </div>
+            
+            <div className="card" style={{padding: '20px', marginBottom: '16px'}}>
+              <label className="label" style={{display: 'block', marginBottom: '12px'}}>Target Distances (yards)</label>
+              <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                {creativeTargets.map((t, i) => (
+                  <div key={i} style={{display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--ivory)', border: '1px solid var(--sand)', borderRadius: '2px', padding: '8px 12px'}}>
+                    <input type="number" value={t} onChange={e => { const u=[...creativeTargets]; u[i]=parseInt(e.target.value)||0; setCreativeTargets(u); }} style={{width: '50px', border: 'none', outline: 'none', textAlign: 'center', fontSize: '15px', fontFamily: 'Cormorant Garamond, serif', background: 'transparent'}} />
+                    {creativeTargets.length > 1 && <button onClick={() => setCreativeTargets(creativeTargets.filter((_,j)=>j!==i))} style={{background: 'none', border: 'none', cursor: 'pointer', color: 'var(--charcoal-light)', padding: '2px'}}><Icon name="x" size={14} /></button>}
+                  </div>
+                ))}
+                <button onClick={() => setCreativeTargets([...creativeTargets, 100])} style={{display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--ivory)', border: '1px dashed var(--sand)', borderRadius: '2px', padding: '8px 12px', cursor: 'pointer', color: 'var(--charcoal-light)', fontSize: '13px'}}><Icon name="plus" size={14} /> Add</button>
+              </div>
+            </div>
+            
+            <div className="card" style={{padding: '20px', marginBottom: '24px'}}>
+              <label className="label" style={{display: 'block', marginBottom: '12px'}}>Rounds</label>
+              <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                <button onClick={() => setCreativeRounds(Math.max(1, creativeRounds-1))} className="btn btn-secondary" style={{padding: '10px'}}><Icon name="minus" size={18} /></button>
+                <span className="stat-value">{creativeRounds}</span>
+                <button onClick={() => setCreativeRounds(creativeRounds+1)} className="btn btn-secondary" style={{padding: '10px'}}><Icon name="plus" size={18} /></button>
+              </div>
+              <p style={{fontSize: '13px', color: 'var(--charcoal-light)', marginTop: '12px'}}>{creativeTargets.length * creativeRounds} total shots</p>
+            </div>
+            
+            <button className="btn btn-primary" onClick={() => { saveCreative(); setPracticeMode('creative'); startSession(); }} style={{width: '100%', padding: '16px'}}>Start Practice</button>
+          </div>
+        </div>
+      );
+
+      // HISTORY SCREEN
+      const HistoryScreen = () => (
+        <div style={{minHeight: '100vh', background: 'var(--cream)', padding: '24px 20px'}}>
+          <div style={{maxWidth: '420px', margin: '0 auto'}}>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', paddingTop: '8px'}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                <button className="btn btn-ghost" onClick={() => setScreen('home')} style={{padding: '8px'}}><Icon name="x" size={20} /></button>
+                <h2 className="heading" style={{fontSize: '24px'}}>History</h2>
+              </div>
+              {sessionHistory.length > 0 && <button onClick={clearHistory} style={{background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', padding: '8px'}}><Icon name="trash" size={18} /></button>}
+            </div>
+            
+            <div className="card" style={{padding: '20px', marginBottom: '20px'}}>
+              <div className="label" style={{marginBottom: '16px'}}>Lifetime Summary</div>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+                {[{ label: 'Sessions', value: lifetimeStats.totalSessions }, { label: 'Avg Points', value: lifetimeStats.avgPoints || '—' }, { label: 'Total Shots', value: lifetimeStats.totalShots }, { label: 'Best Avg', value: lifetimeStats.bestSession || '—', highlight: true }].map((s, i) => (
+                  <div key={i}><div className="stat-value" style={{fontSize: '24px', color: s.highlight ? 'var(--gold)' : 'var(--charcoal)'}}>{s.value}</div><div style={{fontSize: '12px', color: 'var(--charcoal-light)'}}>{s.label}</div></div>
+                ))}
+              </div>
+            </div>
+            
+            {sessionHistory.length === 0 ? (
+              <div style={{textAlign: 'center', padding: '48px 24px', color: 'var(--charcoal-light)'}}><div style={{marginBottom: '12px', opacity: 0.5}}><Icon name="barChart" size={32} /></div><p style={{fontSize: '14px'}}>No sessions recorded yet</p></div>
+            ) : (
+              <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                {sessionHistory.map(s => (
+                  <div key={s.id} className="card" style={{overflow: 'hidden'}}>
+                    <button onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)} style={{width: '100%', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left'}}>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '14px'}}>
+                        <div style={{width: '44px', height: '44px', borderRadius: '2px', background: 'var(--ivory)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><span className={`heading ${getRating(s.avgPoints).color}`} style={{fontSize: '18px'}}>{s.avgPoints}</span></div>
+                        <div><div style={{fontWeight: '500', color: 'var(--charcoal)', fontSize: '14px'}}>{s.mode === 'premier' ? `Level ${s.level}` : 'Creative'}</div><div style={{fontSize: '12px', color: 'var(--charcoal-light)'}}>{formatDate(s.date)}</div></div>
+                      </div>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--charcoal-light)'}}><span style={{fontSize: '13px'}}>{s.shots.length} shots</span><Icon name={expandedSession === s.id ? 'chevronUp' : 'chevronDown'} size={16} /></div>
+                    </button>
+                    {expandedSession === s.id && (
+                      <div style={{padding: '0 20px 20px', borderTop: '1px solid var(--sand)'}}>
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', padding: '16px 0', textAlign: 'center'}}>
+                          <div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '18px', color: 'var(--gold)'}}>{s.avgProximity}y</div><div className="label">Proximity</div></div>
+                          <div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '18px'}}>{s.avgDistanceMiss}y</div><div className="label">Dist Miss</div></div>
+                          <div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '18px'}}>{s.avgDispersion}y</div><div className="label">Dispersion</div></div>
+                        </div>
+                        <div className="hide-scrollbar" style={{maxHeight: '160px', overflowY: 'auto'}}>
+                          {s.shots.map((sh, i) => (
+                            <div key={i} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--sand)', fontSize: '13px'}}>
+                              <span style={{color: 'var(--charcoal-light)', width: '24px'}}>#{i+1}</span>
+                              <span style={{color: 'var(--charcoal)'}}>{sh.target}y → {sh.actual}y</span>
+                              <span style={{color: 'var(--charcoal-light)'}}>{sh.proximity}y</span>
+                              <span className={getRating(sh.points).color} style={{fontWeight: '500'}}>{sh.points}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+      // PRACTICE SCREEN
+      const PracticeScreen = () => {
+        const config = getChallengeConfig(challengeLevel);
+        const total = practiceMode === 'premier' ? config.targets : creativeTargets.length * creativeRounds;
+        const dispersionValue = parseFloat(dispersionAmount) || 0;
+        const canRecord = actualDistance && (dispersionValue === 0 || dispersionDirection);
+        
+        return (
+          <div style={{minHeight: '100vh', background: 'var(--ivory)', padding: '24px 20px'}}>
+            <div style={{maxWidth: '420px', margin: '0 auto'}}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', paddingTop: '8px'}}>
+                <button className="btn btn-ghost" onClick={() => setScreen('home')} style={{padding: '8px'}}><Icon name="x" size={20} /></button>
+                <div style={{textAlign: 'center'}}><div style={{fontSize: '12px', color: 'var(--charcoal-light)'}}>{practiceMode === 'premier' ? `Level ${challengeLevel}` : 'Creative'}</div><div style={{fontSize: '14px', fontWeight: '500'}}>Shot {shotNumber} of {total}</div></div>
+                <button className="btn btn-ghost" onClick={() => currentTarget && speakTarget(currentTarget)} style={{padding: '8px'}}><Icon name="volume" size={20} /></button>
+              </div>
+              
+              <div style={{height: '3px', background: 'var(--sand)', borderRadius: '2px', overflow: 'hidden', marginBottom: '32px'}}><div style={{height: '100%', background: 'var(--forest)', width: `${(shotNumber/total)*100}%`, transition: 'width 400ms ease'}} /></div>
+              
+              {!showResult ? (
+                <div className="fade-in">
+                  <div className="card" style={{padding: '40px 24px', marginBottom: '24px', textAlign: 'center'}}>
+                    <div className="label" style={{marginBottom: '8px'}}>Target Distance</div>
+                    <div className="heading" style={{fontSize: '72px', color: 'var(--charcoal)', lineHeight: 1}}>{currentTarget || '—'}</div>
+                    <div style={{fontSize: '18px', color: 'var(--charcoal-light)', marginTop: '4px'}}>yards</div>
+                  </div>
+                  
+                  <div style={{marginBottom: '20px'}}>
+                    <label className="label" style={{display: 'block', marginBottom: '8px', textAlign: 'center'}}>Actual Carry</label>
+                    <input type="number" inputMode="decimal" value={actualDistance} onChange={e => setActualDistance(e.target.value)} placeholder="yards" className="input-field" autoComplete="off" />
+                  </div>
+                  
+                  <div style={{marginBottom: '20px'}}>
+                    <label className="label" style={{display: 'block', marginBottom: '8px', textAlign: 'center'}}>Offline Distance</label>
+                    <input type="number" inputMode="decimal" value={dispersionAmount} onChange={e => setDispersionAmount(e.target.value)} placeholder="0 = center" className="input-field" autoComplete="off" />
+                  </div>
+                  
+                  <div style={{marginBottom: '24px'}}>
+                    <label className="label" style={{display: 'block', marginBottom: '8px', textAlign: 'center'}}>Miss Direction</label>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+                      <button type="button" onClick={() => setDispersionDirection('left')} disabled={dispersionValue === 0} style={{padding: '14px', borderRadius: '2px', border: dispersionDirection === 'left' ? '2px solid var(--forest)' : '1.5px solid var(--sand)', background: dispersionDirection === 'left' ? 'var(--forest)' : 'var(--white)', color: dispersionDirection === 'left' ? 'white' : dispersionValue === 0 ? 'var(--sand)' : 'var(--charcoal)', cursor: dispersionValue === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: '500', fontSize: '14px', transition: 'all 250ms ease'}}><Icon name="arrowLeft" size={18} /> Left</button>
+                      <button type="button" onClick={() => setDispersionDirection('right')} disabled={dispersionValue === 0} style={{padding: '14px', borderRadius: '2px', border: dispersionDirection === 'right' ? '2px solid var(--forest)' : '1.5px solid var(--sand)', background: dispersionDirection === 'right' ? 'var(--forest)' : 'var(--white)', color: dispersionDirection === 'right' ? 'white' : dispersionValue === 0 ? 'var(--sand)' : 'var(--charcoal)', cursor: dispersionValue === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: '500', fontSize: '14px', transition: 'all 250ms ease'}}>Right <Icon name="arrowRight" size={18} /></button>
+                    </div>
+                    <p style={{textAlign: 'center', fontSize: '12px', color: 'var(--charcoal-light)', marginTop: '8px'}}>{dispersionValue === 0 ? 'Enter offline distance above to enable' : 'Select miss direction'}</p>
+                  </div>
+                  
+                  <button className="btn btn-primary" onClick={recordShot} disabled={!canRecord} style={{width: '100%', padding: '18px', opacity: canRecord ? 1 : 0.4}}>Record Shot</button>
+                </div>
+              ) : (
+                <div className="fade-in">
+                  <div className="card" style={{padding: '32px 24px', marginBottom: '20px'}}>
+                    <div style={{textAlign: 'center', marginBottom: '28px'}}>
+                      <div className={`label ${lastShotResult?.rating.color}`} style={{marginBottom: '4px'}}>{lastShotResult?.rating.label}</div>
+                      <div className="heading" style={{fontSize: '56px', color: 'var(--charcoal)', lineHeight: 1}}>{lastShotResult?.points}</div>
+                      <div style={{fontSize: '14px', color: 'var(--charcoal-light)', marginTop: '4px'}}>points</div>
+                    </div>
+                    
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center', marginBottom: '24px'}}>
+                      <div><div className="label" style={{marginBottom: '6px'}}>Distance</div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', color: lastShotResult?.distanceMiss > 0 ? 'var(--rust)' : lastShotResult?.distanceMiss < 0 ? '#4a7c9b' : 'var(--forest)'}}>{lastShotResult?.distanceMiss > 0 ? '+' : ''}{lastShotResult?.distanceMiss}y</div><div style={{fontSize: '11px', color: 'var(--charcoal-light)'}}>{lastShotResult?.distanceMiss > 0 ? 'long' : lastShotResult?.distanceMiss < 0 ? 'short' : 'perfect'}</div></div>
+                      <div><div className="label" style={{marginBottom: '6px'}}>Dispersion</div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', color: lastShotResult?.dispersion > 0 ? '#7c5295' : 'var(--forest)'}}>{lastShotResult?.dispersion}y</div><div style={{fontSize: '11px', color: 'var(--charcoal-light)'}}>{lastShotResult?.dispersion > 0 ? lastShotResult?.dispersionDir : 'center'}</div></div>
+                      <div><div className="label" style={{marginBottom: '6px'}}>Proximity</div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', color: 'var(--gold)'}}>{lastShotResult?.proximity}y</div><div style={{fontSize: '11px', color: 'var(--charcoal-light)'}}>to pin</div></div>
+                    </div>
+                    
+                    <div style={{background: 'var(--ivory)', borderRadius: '2px', padding: '20px', display: 'flex', justifyContent: 'center'}}>
+                      <div style={{position: 'relative', width: '120px', height: '120px'}}>
+                        <div style={{position: 'absolute', inset: 0, border: '1px solid var(--sand)', borderRadius: '2px'}} />
+                        <div style={{position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'var(--sand)'}} />
+                        <div style={{position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--sand)'}} />
+                        <div style={{position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '10px', height: '10px', border: '2px solid var(--forest)', borderRadius: '50%'}} />
+                        <div style={{position: 'absolute', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--charcoal)', left: `calc(50% + ${(lastShotResult?.dispersionDir === 'left' ? -1 : 1) * Math.min(lastShotResult?.dispersion || 0, 20) * 2.5}px)`, top: `calc(50% - ${Math.min(lastShotResult?.distanceMiss || 0, 20) * 2.5}px)`, transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 2px white'}} />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="card" style={{padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <span style={{fontSize: '14px', color: 'var(--charcoal-light)'}}>Session Average</span>
+                    <span className="heading" style={{fontSize: '22px'}}>{Math.round(sessionShots.reduce((s,x)=>s+x.points,0)/sessionShots.length)} pts</span>
+                  </div>
+                  
+                  <button className="btn btn-primary" onClick={nextShot} style={{width: '100%', padding: '18px'}}>{shotNumber >= total ? 'View Results' : 'Next Target'}<Icon name="chevronRight" size={18} /></button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      // RESULTS SCREEN
+      const ResultsScreen = () => {
+        const stats = getSessionStats();
+        const leveledUp = checkLevelUp();
+        if (!stats) return null;
+        
+        return (
+          <div style={{minHeight: '100vh', background: 'var(--cream)', padding: '24px 20px'}}>
+            <div style={{maxWidth: '420px', margin: '0 auto'}}>
+              <div className="fade-in">
+                <div style={{textAlign: 'center', paddingTop: '32px', paddingBottom: '24px'}}>
+                  <div style={{color: leveledUp ? 'var(--gold)' : 'var(--forest)', marginBottom: '16px'}}><Icon name={leveledUp ? 'trophy' : 'target'} size={48} /></div>
+                  <h2 className="heading" style={{fontSize: '28px', marginBottom: '4px'}}>{leveledUp ? 'Level Up!' : 'Session Complete'}</h2>
+                  {leveledUp && <p style={{color: 'var(--gold)', fontSize: '14px'}}>Advanced to Level {challengeLevel}</p>}
+                </div>
+                
+                <div className="card" style={{padding: '32px', marginBottom: '16px', textAlign: 'center'}}>
+                  <div className="label" style={{marginBottom: '8px'}}>Average Points</div>
+                  <div className="heading" style={{fontSize: '56px', color: 'var(--charcoal)', lineHeight: 1, marginBottom: '8px'}}>{stats.avgPoints}</div>
+                  <span className={`label ${getRating(stats.avgPoints).color}`} style={{background: 'var(--ivory)', padding: '6px 14px', borderRadius: '2px', display: 'inline-block'}}>{getRating(stats.avgPoints).label}</span>
+                </div>
+                
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px'}}>
+                  {[{ label: 'Proximity', value: `${stats.avgProximity}y`, color: 'var(--gold)' }, { label: 'Dist Miss', value: `${stats.avgDistanceMiss}y` }, { label: 'Dispersion', value: `${stats.avgDispersion}y` }].map((s, i) => (
+                    <div key={i} className="card" style={{padding: '14px', textAlign: 'center'}}><div className="label" style={{marginBottom: '4px'}}>{s.label}</div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: s.color || 'var(--charcoal)'}}>{s.value}</div></div>
+                  ))}
+                </div>
+                
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px'}}>
+                  <div className="card" style={{padding: '14px', textAlign: 'center'}}><div className="label" style={{marginBottom: '4px'}}>Excellent</div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: 'var(--forest)'}}>{stats.excellentShots}</div></div>
+                  <div className="card" style={{padding: '14px', textAlign: 'center'}}><div className="label" style={{marginBottom: '4px'}}>Best Shot</div><div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: 'var(--gold)'}}>{stats.bestShot.points}</div></div>
+                </div>
+                
+                <div className="card" style={{padding: '20px', marginBottom: '20px'}}>
+                  <div className="label" style={{marginBottom: '12px'}}>Shot Breakdown</div>
+                  <div className="hide-scrollbar" style={{maxHeight: '180px', overflowY: 'auto'}}>
+                    {sessionShots.map((s, i) => (
+                      <div key={i} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--sand)', fontSize: '13px'}}>
+                        <span style={{color: 'var(--charcoal-light)', width: '28px'}}>#{i+1}</span>
+                        <span style={{color: 'var(--charcoal)'}}>{s.target}y → {s.actual}y</span>
+                        <span style={{color: 'var(--charcoal-light)', width: '48px', textAlign: 'right'}}>{s.proximity}y</span>
+                        <span className={s.rating.color} style={{fontWeight: '500', width: '36px', textAlign: 'right'}}>{s.points}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--forest)', marginBottom: '20px', fontSize: '13px'}}><Icon name="check" size={16} /> Saved to history</div>
+                
+                <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                  <button className="btn btn-primary" onClick={startSession} style={{width: '100%', padding: '16px'}}><Icon name="refresh" size={18} /> Practice Again</button>
+                  <button className="btn btn-secondary" onClick={() => setScreen('home')} style={{width: '100%', padding: '16px'}}>Back to Home</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <>
+          {screen === 'home' && <HomeScreen />}
+          {screen === 'setup' && <SetupScreen />}
+          {screen === 'creative' && <CreativeScreen />}
+          {screen === 'history' && <HistoryScreen />}
+          {screen === 'practice' && <PracticeScreen />}
+          {screen === 'results' && <ResultsScreen />}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<WedgeMaster />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#2d5016">
+  <title>Stack Putting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f4f0;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    // PGA Tour expected putts benchmark (Mark Broadie's research)
+    const EXPECTED_PUTTS = {
+      2: 1.01, 3: 1.04, 4: 1.12, 5: 1.23, 6: 1.30, 7: 1.39, 8: 1.46, 9: 1.53,
+      10: 1.61, 11: 1.65, 12: 1.69, 13: 1.72, 14: 1.75, 15: 1.78, 16: 1.80, 17: 1.82,
+      18: 1.84, 19: 1.86, 20: 1.87, 21: 1.89, 22: 1.90, 23: 1.91, 24: 1.92, 25: 1.93,
+      26: 1.94, 27: 1.95, 28: 1.96, 29: 1.97, 30: 1.98, 31: 1.99, 32: 2.00, 33: 2.00,
+      34: 2.01, 35: 2.02, 36: 2.03, 37: 2.04, 38: 2.05, 39: 2.06, 40: 2.07,
+      41: 2.08, 42: 2.09, 43: 2.10, 44: 2.11, 45: 2.12, 46: 2.13, 47: 2.14, 48: 2.15,
+      49: 2.16, 50: 2.17, 51: 2.18, 52: 2.19, 53: 2.20, 54: 2.21, 55: 2.22, 56: 2.23,
+      57: 2.24, 58: 2.25, 59: 2.26, 60: 2.27
+    };
+
+    const getExpectedPutts = (feet) => {
+      if (feet <= 2) return 1.01;
+      if (feet >= 60) return 2.27;
+      return EXPECTED_PUTTS[feet] || (1.01 + (feet - 2) * 0.022);
+    };
+
+    const PUTT_DISTRIBUTION = [
+      { distance: '< 3 ft', minFeet: 2, maxFeet: 3, count: 1 },
+      { distance: '3-5 ft', minFeet: 3, maxFeet: 5, count: 2 },
+      { distance: '5-10 ft', minFeet: 5, maxFeet: 10, count: 4 },
+      { distance: '10-15 ft', minFeet: 10, maxFeet: 15, count: 4 },
+      { distance: '15-25 ft', minFeet: 15, maxFeet: 25, count: 4 },
+      { distance: '25-40 ft', minFeet: 25, maxFeet: 40, count: 2 },
+      { distance: '40+ ft', minFeet: 40, maxFeet: 60, count: 1 },
+    ];
+
+    const DISTANCE_BUCKETS = [
+      { name: 'Short (< 5 ft)', min: 0, max: 5, key: 'short' },
+      { name: 'Scoring (5-10 ft)', min: 5, max: 10, key: 'scoring' },
+      { name: 'Mid (10-20 ft)', min: 10, max: 20, key: 'mid' },
+      { name: 'Lag (20+ ft)', min: 20, max: 100, key: 'lag' },
+    ];
+
+    const BALL_MARKING_OPTIONS = [
+      { id: 'line', label: 'Line', icon: 'line' },
+      { id: 'multiple', label: 'Multiple Lines', icon: 'multiple' },
+      { id: 'standard', label: 'Standard Markings', icon: 'standard' },
+      { id: 'none', label: 'No Markings', icon: 'none' },
+    ];
+
+    const SLOPES = ['Uphill', 'Flat', 'Downhill'];
+    const BREAKS = ['Left to Right', 'Straight', 'Right to Left'];
+    const FIRST_PUTT_RESULTS = [
+      ['Fast Left', 'Fast', 'Fast Right'],
+      ['Left', 'Made', 'Right'],
+      ['Slow Left', 'Slow', 'Slow Right']
+    ];
+    const SECOND_PUTT_DISTANCES = ['Tap In', '3 ft', '4 ft', '5 ft', '6 ft', '7 ft', '8 ft', '> 9 ft'];
+
+    function generateSession() {
+      const putts = [];
+      PUTT_DISTRIBUTION.forEach(range => {
+        for (let i = 0; i < range.count; i++) {
+          const distance = Math.floor(Math.random() * (range.maxFeet - range.minFeet + 1)) + range.minFeet;
+          putts.push({
+            distance,
+            slope: SLOPES[Math.floor(Math.random() * SLOPES.length)],
+            break: BREAKS[Math.floor(Math.random() * BREAKS.length)],
+          });
+        }
+      });
+      for (let i = putts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [putts[i], putts[j]] = [putts[j], putts[i]];
+      }
+      return putts;
+    }
+
+    const BallMarkingIcon = ({ type, size = 32, color = 'currentColor' }) => {
+      const icons = {
+        line: (
+          <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.5">
+            <circle cx="16" cy="16" r="12"/>
+            <line x1="16" y1="4" x2="16" y2="28"/>
+          </svg>
+        ),
+        multiple: (
+          <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.5">
+            <circle cx="16" cy="16" r="12"/>
+            <line x1="16" y1="4" x2="16" y2="28"/>
+            <line x1="10" y1="6" x2="10" y2="26"/>
+            <line x1="22" y1="6" x2="22" y2="26"/>
+          </svg>
+        ),
+        standard: (
+          <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.5">
+            <circle cx="16" cy="16" r="12"/>
+            <line x1="16" y1="4" x2="16" y2="10"/>
+            <line x1="16" y1="22" x2="16" y2="28"/>
+            <line x1="4" y1="16" x2="10" y2="16"/>
+            <line x1="22" y1="16" x2="28" y2="16"/>
+          </svg>
+        ),
+        none: (
+          <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.5">
+            <circle cx="16" cy="16" r="12"/>
+          </svg>
+        ),
+      };
+      return icons[type] || icons.none;
+    };
+
+    function StackPuttingTracker() {
+      const [screen, setScreen] = useState('welcome');
+      const [session, setSession] = useState([]);
+      const [currentHole, setCurrentHole] = useState(0);
+      const [results, setResults] = useState([]);
+      const [currentResult, setCurrentResult] = useState({
+        speedCorrect: true,
+        lineCorrect: true,
+        firstPuttResult: null,
+        secondPuttDistance: null,
+        secondPuttMade: null,
+      });
+      const [pastSessions, setPastSessions] = useState([]);
+      const [summaryTab, setSummaryTab] = useState('overview');
+      
+      const [sessionSetup, setSessionSetup] = useState({
+        putter: '',
+        ballMarking: 'none',
+      });
+      const [savedPutters, setSavedPutters] = useState([]);
+
+      useEffect(() => {
+        try {
+          const sessions = localStorage.getItem('putting-sessions');
+          if (sessions) setPastSessions(JSON.parse(sessions));
+          const putters = localStorage.getItem('putting-putters');
+          if (putters) setSavedPutters(JSON.parse(putters));
+        } catch (e) {
+          console.log('No saved data');
+        }
+      }, []);
+
+      const savePutter = (putterName) => {
+        if (putterName && !savedPutters.includes(putterName)) {
+          const updated = [...savedPutters, putterName].slice(0, 10);
+          setSavedPutters(updated);
+          try {
+            localStorage.setItem('putting-putters', JSON.stringify(updated));
+          } catch (e) {}
+        }
+      };
+
+      const saveSession = (sessionStats) => {
+        const newSession = {
+          id: Date.now(),
+          date: new Date().toISOString(),
+          putter: sessionSetup.putter,
+          ballMarking: sessionSetup.ballMarking,
+          stats: sessionStats,
+        };
+        const updated = [newSession, ...pastSessions].slice(0, 50);
+        setPastSessions(updated);
+        try {
+          localStorage.setItem('putting-sessions', JSON.stringify(updated));
+        } catch (e) {}
+      };
+
+      const goToSetup = () => setScreen('setup');
+
+      const startSession = () => {
+        savePutter(sessionSetup.putter);
+        setSession(generateSession());
+        setCurrentHole(0);
+        setResults([]);
+        setCurrentResult({ speedCorrect: true, lineCorrect: true, firstPuttResult: null, secondPuttDistance: null, secondPuttMade: null });
+        setScreen('putt-setup');
+        setSummaryTab('overview');
+      };
+
+      const goBack = () => {
+        if (screen === 'setup') {
+          setScreen('welcome');
+        } else if (screen === 'second-putt') {
+          setCurrentResult(prev => ({ ...prev, firstPuttResult: null, secondPuttDistance: null }));
+          setScreen('putt-setup');
+        } else if (screen === 'putt-setup' && currentHole > 0) {
+          const prevResult = results[results.length - 1];
+          setResults(prev => prev.slice(0, -1));
+          setCurrentHole(prev => prev - 1);
+          setCurrentResult({
+            speedCorrect: prevResult?.speedCorrect ?? true,
+            lineCorrect: prevResult?.lineCorrect ?? true,
+            firstPuttResult: prevResult?.firstPuttResult ?? null,
+            secondPuttDistance: prevResult?.secondPuttDistance ?? null,
+            secondPuttMade: prevResult?.secondPuttMade ?? null,
+          });
+          if (prevResult?.firstPuttResult && prevResult.firstPuttResult !== 'Made') {
+            setScreen('second-putt');
+          }
+        } else if (screen === 'putt-setup' && currentHole === 0) {
+          setScreen('setup');
+        }
+      };
+
+      const handleFirstPuttResult = (result) => {
+        setCurrentResult(prev => ({ ...prev, firstPuttResult: result }));
+        if (result === 'Made') {
+          const finalResult = { ...currentResult, firstPuttResult: result, secondPuttDistance: null, secondPuttMade: true };
+          setResults(prev => [...prev, { ...session[currentHole], ...finalResult }]);
+          if (currentHole < 17) {
+            setCurrentHole(prev => prev + 1);
+            setCurrentResult({ speedCorrect: true, lineCorrect: true, firstPuttResult: null, secondPuttDistance: null, secondPuttMade: null });
+          } else {
+            setScreen('summary');
+          }
+        } else {
+          setScreen('second-putt');
+        }
+      };
+
+      const handleSecondPuttResult = (made) => {
+        const finalResult = { ...currentResult, secondPuttMade: made };
+        const newResults = [...results, { ...session[currentHole], ...finalResult }];
+        setResults(newResults);
+        if (currentHole < 17) {
+          setCurrentHole(prev => prev + 1);
+          setCurrentResult({ speedCorrect: true, lineCorrect: true, firstPuttResult: null, secondPuttDistance: null, secondPuttMade: null });
+          setScreen('putt-setup');
+        } else {
+          setScreen('summary');
+        }
+      };
+
+      const currentPutt = session[currentHole];
+
+      const stats = useMemo(() => {
+        if (results.length === 0) return null;
+        
+        const onePutts = results.filter(r => r.firstPuttResult === 'Made').length;
+        const twoPutts = results.filter(r => r.firstPuttResult !== 'Made' && r.secondPuttMade).length;
+        const threePutts = results.filter(r => r.firstPuttResult !== 'Made' && !r.secondPuttMade).length;
+        const totalPutts = onePutts + (twoPutts * 2) + (threePutts * 3);
+        const speedCorrect = results.filter(r => r.speedCorrect).length;
+        const lineCorrect = results.filter(r => r.lineCorrect).length;
+
+        let totalExpected = 0;
+        let totalActual = 0;
+        const bucketSG = { short: { expected: 0, actual: 0 }, scoring: { expected: 0, actual: 0 }, mid: { expected: 0, actual: 0 }, lag: { expected: 0, actual: 0 } };
+        
+        results.forEach(r => {
+          const expected = getExpectedPutts(r.distance);
+          const actual = r.firstPuttResult === 'Made' ? 1 : (r.secondPuttMade ? 2 : 3);
+          totalExpected += expected;
+          totalActual += actual;
+          
+          const bucket = DISTANCE_BUCKETS.find(b => r.distance >= b.min && r.distance < b.max);
+          if (bucket) {
+            bucketSG[bucket.key].expected += expected;
+            bucketSG[bucket.key].actual += actual;
+          }
+        });
+
+        const strokesGained = totalExpected - totalActual;
+        const bucketStrokesGained = {};
+        Object.keys(bucketSG).forEach(key => {
+          const count = results.filter(r => {
+            const bucket = DISTANCE_BUCKETS.find(b => b.key === key);
+            return r.distance >= bucket.min && r.distance < bucket.max;
+          }).length;
+          bucketStrokesGained[key] = {
+            sg: bucketSG[key].expected - bucketSG[key].actual,
+            count
+          };
+        });
+
+        const misses = results.filter(r => r.firstPuttResult !== 'Made');
+        const speedMisses = { fast: 0, slow: 0 };
+        const directionMisses = { left: 0, right: 0 };
+        
+        misses.forEach(m => {
+          const result = m.firstPuttResult.toLowerCase();
+          if (result.includes('fast')) speedMisses.fast++;
+          if (result.includes('slow')) speedMisses.slow++;
+          if (result.includes('left')) directionMisses.left++;
+          if (result.includes('right')) directionMisses.right++;
+        });
+
+        const totalSpeedMisses = speedMisses.fast + speedMisses.slow;
+        const totalDirMisses = directionMisses.left + directionMisses.right;
+        
+        const speedBalance = totalSpeedMisses > 0 ? (speedMisses.fast / totalSpeedMisses) * 100 : 50;
+        const directionBalance = totalDirMisses > 0 ? (directionMisses.left / totalDirMisses) * 100 : 50;
+
+        const scoringSG = bucketStrokesGained.scoring?.sg || 0;
+
+        return { 
+          onePutts, twoPutts, threePutts, totalPutts, speedCorrect, lineCorrect,
+          strokesGained, bucketStrokesGained, scoringSG,
+          speedBalance, directionBalance, speedMisses, directionMisses, missCount: misses.length
+        };
+      }, [results]);
+
+      useEffect(() => {
+        if (screen === 'summary' && stats && results.length === 18) {
+          saveSession(stats);
+        }
+      }, [screen, stats]);
+
+      const trends = useMemo(() => {
+        if (pastSessions.length < 2) return null;
+        const recent = pastSessions.slice(0, 5);
+        const avgSG = recent.reduce((sum, s) => sum + (s.stats?.strokesGained || 0), 0) / recent.length;
+        const avgSpeed = recent.reduce((sum, s) => sum + (s.stats?.speedBalance || 50), 0) / recent.length;
+        const avgDir = recent.reduce((sum, s) => sum + (s.stats?.directionBalance || 50), 0) / recent.length;
+        const avgScoringSG = recent.reduce((sum, s) => sum + (s.stats?.scoringSG || s.stats?.bucketStrokesGained?.scoring?.sg || 0), 0) / recent.length;
+        return { avgSG, avgSpeed, avgDir, avgScoringSG, count: pastSessions.length };
+      }, [pastSessions]);
+
+      const getTrendIndicator = (current, average, type) => {
+        if (type === 'balance') {
+          const currentDeviation = Math.abs(current - 50);
+          const avgDeviation = Math.abs(average - 50);
+          const diff = avgDeviation - currentDeviation;
+          if (Math.abs(diff) < 3) return { icon: '—', color: '#5a6666', label: 'Stable' };
+          if (diff > 0) return { icon: '↑', color: '#2d5016', label: 'Improving' };
+          return { icon: '↓', color: '#c4785a', label: 'Declining' };
+        } else {
+          const diff = current - average;
+          if (Math.abs(diff) < 0.1) return { icon: '—', color: '#5a6666', label: 'Stable' };
+          if (diff > 0) return { icon: '↑', color: '#2d5016', label: 'Improving' };
+          return { icon: '↓', color: '#c4785a', label: 'Declining' };
+        }
+      };
+
+      const BackButton = () => (
+        <button style={styles.backButton} onClick={goBack}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span>Back</span>
+        </button>
+      );
+
+      const BalanceIndicator = ({ value, leftLabel, rightLabel, title }) => {
+        const deviation = Math.abs(value - 50);
+        const isGood = deviation <= 15;
+        const isFair = deviation <= 30;
+        return (
+          <div style={styles.balanceContainer}>
+            {title && <div style={styles.balanceTitle}>{title}</div>}
+            <div style={styles.balanceTrack}>
+              <div style={styles.balanceIdealZone}></div>
+              <div style={{
+                ...styles.balanceMarker,
+                left: `${value}%`,
+                background: isGood ? '#2d5016' : isFair ? '#b8956a' : '#c4785a'
+              }}></div>
+            </div>
+            <div style={styles.balanceLabels}>
+              <span>{leftLabel}</span>
+              <span style={styles.balanceCenter}>50%</span>
+              <span>{rightLabel}</span>
+            </div>
+            <div style={{
+              ...styles.balanceStatus,
+              color: isGood ? '#2d5016' : isFair ? '#b8956a' : '#c4785a'
+            }}>
+              {isGood ? 'Balanced' : value < 50 ? `${leftLabel} tendency` : `${rightLabel} tendency`}
+            </div>
+          </div>
+        );
+      };
+
+      const getBallMarkingLabel = (id) => {
+        const option = BALL_MARKING_OPTIONS.find(o => o.id === id);
+        return option ? option.label : 'None';
+      };
+
+      if (screen === 'welcome') {
+        return (
+          <div style={styles.container}>
+            <div style={styles.welcomeCard}>
+              <div style={styles.logoContainer}>
+                <div style={styles.logo}>
+                  <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#2d5016" strokeWidth="1.5"/>
+                    <circle cx="50" cy="50" r="32" fill="none" stroke="#2d5016" strokeWidth="1.2"/>
+                    <circle cx="50" cy="50" r="19" fill="none" stroke="#2d5016" strokeWidth="1"/>
+                    <circle cx="50" cy="50" r="5" fill="#2d5016"/>
+                  </svg>
+                </div>
+              </div>
+              <h1 style={styles.title}>Stack Putting</h1>
+              <p style={styles.subtitle}>18-Hole Practice Session</p>
+              
+              {trends && (
+                <div style={styles.trendCard}>
+                  <div style={styles.trendTitle}>Your Trends ({trends.count} sessions)</div>
+                  <div style={styles.trendRow}>
+                    <span>Avg Strokes Gained</span>
+                    <span style={{ color: trends.avgSG >= 0 ? '#2d5016' : '#c4785a', fontWeight: '600' }}>
+                      {trends.avgSG >= 0 ? '+' : ''}{trends.avgSG.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={styles.trendRow}>
+                    <span>Avg SG (5-10 ft)</span>
+                    <span style={{ color: trends.avgScoringSG >= 0 ? '#2d5016' : '#c4785a', fontWeight: '600' }}>
+                      {trends.avgScoringSG >= 0 ? '+' : ''}{trends.avgScoringSG.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={styles.trendRow}>
+                    <span>Speed Balance</span>
+                    <span style={{ color: Math.abs(trends.avgSpeed - 50) <= 15 ? '#2d5016' : '#b8956a' }}>
+                      {trends.avgSpeed.toFixed(0)}% fast
+                    </span>
+                  </div>
+                  <div style={styles.trendRow}>
+                    <span>Direction Balance</span>
+                    <span style={{ color: Math.abs(trends.avgDir - 50) <= 15 ? '#2d5016' : '#b8956a' }}>
+                      {trends.avgDir.toFixed(0)}% left
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div style={styles.infoCard}>
+                <p style={styles.infoLabel}>Practice putts that mirror a real round</p>
+                <div style={styles.distributionGrid}>
+                  <div style={styles.distItem}><span style={styles.distCount}>1×</span> Under 3 ft</div>
+                  <div style={styles.distItem}><span style={styles.distCount}>2×</span> 3–5 ft</div>
+                  <div style={styles.distItem}><span style={styles.distCount}>4×</span> 5–10 ft</div>
+                  <div style={styles.distItem}><span style={styles.distCount}>4×</span> 10–15 ft</div>
+                  <div style={styles.distItem}><span style={styles.distCount}>4×</span> 15–25 ft</div>
+                  <div style={styles.distItem}><span style={styles.distCount}>2×</span> 25–40 ft</div>
+                  <div style={styles.distItem}><span style={styles.distCount}>1×</span> 40+ ft</div>
+                </div>
+              </div>
+              <button style={styles.primaryButton} onClick={goToSetup}>
+                Begin Session
+              </button>
+              
+              {pastSessions.length > 0 && (
+                <button 
+                  style={styles.secondaryButton} 
+                  onClick={() => setScreen('history')}
+                >
+                  View History ({pastSessions.length})
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      if (screen === 'setup') {
+        return (
+          <div style={styles.container}>
+            <div style={styles.pageWrapper}>
+              <div style={styles.topNav}>
+                <BackButton />
+                <div style={styles.holeLabel}>Session Setup</div>
+              </div>
+
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Putter</h3>
+                <input
+                  type="text"
+                  placeholder="Enter putter name..."
+                  value={sessionSetup.putter}
+                  onChange={(e) => setSessionSetup(prev => ({ ...prev, putter: e.target.value }))}
+                  style={styles.textInput}
+                />
+                {savedPutters.length > 0 && (
+                  <div style={styles.putterChips}>
+                    {savedPutters.map(p => (
+                      <button
+                        key={p}
+                        style={{
+                          ...styles.putterChip,
+                          ...(sessionSetup.putter === p ? styles.putterChipActive : {})
+                        }}
+                        onClick={() => setSessionSetup(prev => ({ ...prev, putter: p }))}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Ball Alignment</h3>
+                <p style={styles.setupDescription}>
+                  What alignment markings are you using?
+                </p>
+                <div style={styles.markingGrid}>
+                  {BALL_MARKING_OPTIONS.map(option => (
+                    <button
+                      key={option.id}
+                      style={{
+                        ...styles.markingBtn,
+                        ...(sessionSetup.ballMarking === option.id ? styles.markingBtnActive : {})
+                      }}
+                      onClick={() => setSessionSetup(prev => ({ ...prev, ballMarking: option.id }))}
+                    >
+                      <BallMarkingIcon 
+                        type={option.icon} 
+                        size={36} 
+                        color={sessionSetup.ballMarking === option.id ? '#fafaf8' : '#2d5016'} 
+                      />
+                      <span style={styles.markingLabel}>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                style={{
+                  ...styles.primaryButton,
+                  ...(sessionSetup.putter.trim() === '' ? styles.btnDisabled : {})
+                }}
+                onClick={startSession}
+                disabled={sessionSetup.putter.trim() === ''}
+              >
+                Start Putting
+              </button>
+              {sessionSetup.putter.trim() === '' && (
+                <p style={styles.hint}>Please enter a putter name to continue</p>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      if (screen === 'history') {
+        return (
+          <div style={styles.container}>
+            <div style={styles.pageWrapper}>
+              <div style={styles.topNav}>
+                <button style={styles.backButton} onClick={() => setScreen('welcome')}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  <span>Back</span>
+                </button>
+                <div style={styles.holeLabel}>Session History</div>
+              </div>
+
+              <div style={styles.historyList}>
+                {pastSessions.map((s, idx) => (
+                  <div key={s.id} style={styles.historyCard}>
+                    <div style={styles.historyHeader}>
+                      <div style={styles.historyDate}>
+                        {new Date(s.date).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </div>
+                      <div style={{
+                        ...styles.historySG,
+                        color: s.stats?.strokesGained >= 0 ? '#2d5016' : '#c4785a'
+                      }}>
+                        {s.stats?.strokesGained >= 0 ? '+' : ''}{s.stats?.strokesGained?.toFixed(2)} SG
+                      </div>
+                    </div>
+                    <div style={styles.historyDetails}>
+                      <span style={styles.historyPutter}>{s.putter}</span>
+                      <span style={styles.historyBadge}>{getBallMarkingLabel(s.ballMarking)}</span>
+                    </div>
+                    <div style={styles.historyStats}>
+                      <div style={styles.historyStatItem}>
+                        <span style={styles.historyStatValue}>{s.stats?.totalPutts}</span>
+                        <span style={styles.historyStatLabel}>Putts</span>
+                      </div>
+                      <div style={styles.historyStatItem}>
+                        <span style={styles.historyStatValue}>{s.stats?.onePutts}</span>
+                        <span style={styles.historyStatLabel}>1-Putts</span>
+                      </div>
+                      <div style={styles.historyStatItem}>
+                        <span style={styles.historyStatValue}>{s.stats?.threePutts}</span>
+                        <span style={styles.historyStatLabel}>3-Putts</span>
+                      </div>
+                      <div style={styles.historyStatItem}>
+                        <span style={styles.historyStatValue}>{Math.round(s.stats?.speedBalance || 50)}%</span>
+                        <span style={styles.historyStatLabel}>Speed</span>
+                      </div>
+                      <div style={styles.historyStatItem}>
+                        <span style={styles.historyStatValue}>{Math.round(s.stats?.directionBalance || 50)}%</span>
+                        <span style={styles.historyStatLabel}>Dir</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (screen === 'putt-setup') {
+        return (
+          <div style={styles.container}>
+            <div style={styles.pageWrapper}>
+              <div style={styles.topNav}>
+                <BackButton />
+                <div style={styles.holeLabel}>Hole {currentHole + 1} of 18</div>
+              </div>
+              
+              <div style={styles.progressContainer}>
+                <div style={styles.progressTrack}>
+                  <div style={{ ...styles.progressFill, width: `${((currentHole) / 18) * 100}%` }}></div>
+                </div>
+              </div>
+
+              <div style={styles.card}>
+                <div style={styles.distanceDisplay}>
+                  <span style={styles.distanceValue}>{currentPutt?.distance}</span>
+                  <span style={styles.distanceLabel}>feet</span>
+                </div>
+                <div style={styles.expectedPutts}>
+                  Expected: {getExpectedPutts(currentPutt?.distance).toFixed(2)} putts
+                </div>
+                <div style={styles.conditionsContainer}>
+                  <div style={styles.condition}>
+                    <span style={styles.conditionIcon}>
+                      {currentPutt?.slope === 'Uphill' ? '↑' : currentPutt?.slope === 'Downhill' ? '↓' : '—'}
+                    </span>
+                    <span style={styles.conditionText}>{currentPutt?.slope}</span>
+                  </div>
+                  <div style={styles.conditionDivider}></div>
+                  <div style={styles.condition}>
+                    <span style={styles.conditionIcon}>
+                      {currentPutt?.break === 'Left to Right' ? '↷' : currentPutt?.break === 'Right to Left' ? '↶' : '↑'}
+                    </span>
+                    <span style={styles.conditionText}>{currentPutt?.break}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Read Assessment</h3>
+                <div style={styles.toggleSection}>
+                  <div style={styles.toggleRow}>
+                    <span style={styles.toggleLabel}>Speed Read</span>
+                    <div style={styles.toggleGroup}>
+                      <button
+                        style={{ ...styles.toggleBtn, ...(currentResult.speedCorrect ? styles.toggleActive : {}) }}
+                        onClick={() => setCurrentResult(prev => ({ ...prev, speedCorrect: true }))}
+                      >Correct</button>
+                      <button
+                        style={{ ...styles.toggleBtn, ...(currentResult.speedCorrect === false ? styles.toggleIncorrect : {}) }}
+                        onClick={() => setCurrentResult(prev => ({ ...prev, speedCorrect: false }))}
+                      >Incorrect</button>
+                    </div>
+                  </div>
+                  <div style={styles.toggleRow}>
+                    <span style={styles.toggleLabel}>Line Read</span>
+                    <div style={styles.toggleGroup}>
+                      <button
+                        style={{ ...styles.toggleBtn, ...(currentResult.lineCorrect ? styles.toggleActive : {}) }}
+                        onClick={() => setCurrentResult(prev => ({ ...prev, lineCorrect: true }))}
+                      >Correct</button>
+                      <button
+                        style={{ ...styles.toggleBtn, ...(currentResult.lineCorrect === false ? styles.toggleIncorrect : {}) }}
+                        onClick={() => setCurrentResult(prev => ({ ...prev, lineCorrect: false }))}
+                      >Incorrect</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>First Putt Result</h3>
+                <div style={styles.resultGrid}>
+                  {FIRST_PUTT_RESULTS.map((row, rowIndex) => (
+                    <div key={rowIndex} style={styles.resultRow}>
+                      {row.map((result) => (
+                        <button
+                          key={result}
+                          style={{
+                            ...styles.resultBtn,
+                            ...(result === 'Made' ? styles.madeBtn : {}),
+                          }}
+                          onClick={() => handleFirstPuttResult(result)}
+                        >
+                          {result}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (screen === 'second-putt') {
+        return (
+          <div style={styles.container}>
+            <div style={styles.pageWrapper}>
+              <div style={styles.topNav}>
+                <BackButton />
+                <div style={styles.holeLabel}>Hole {currentHole + 1} of 18</div>
+              </div>
+
+              <div style={styles.missNotice}>
+                <span style={styles.missNoticeLabel}>First putt:</span>
+                <span style={styles.missNoticeValue}>{currentResult.firstPuttResult}</span>
+              </div>
+
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Second Putt Distance</h3>
+                <div style={styles.distanceGrid}>
+                  {SECOND_PUTT_DISTANCES.map((dist) => (
+                    <button
+                      key={dist}
+                      style={{
+                        ...styles.distanceBtn,
+                        ...(currentResult.secondPuttDistance === dist ? styles.distanceBtnActive : {})
+                      }}
+                      onClick={() => setCurrentResult(prev => ({ ...prev, secondPuttDistance: dist }))}
+                    >
+                      {dist}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Second Putt Result</h3>
+                <div style={styles.makeButtonRow}>
+                  <button
+                    style={{ 
+                      ...styles.makeBtn, 
+                      ...styles.madeBtnLarge,
+                      ...(!currentResult.secondPuttDistance ? styles.btnDisabled : {})
+                    }}
+                    onClick={() => handleSecondPuttResult(true)}
+                    disabled={!currentResult.secondPuttDistance}
+                  >
+                    Made
+                  </button>
+                  <button
+                    style={{ 
+                      ...styles.makeBtn, 
+                      ...styles.missedBtn,
+                      ...(!currentResult.secondPuttDistance ? styles.btnDisabled : {})
+                    }}
+                    onClick={() => handleSecondPuttResult(false)}
+                    disabled={!currentResult.secondPuttDistance}
+                  >
+                    Missed
+                  </button>
+                </div>
+                {!currentResult.secondPuttDistance && (
+                  <p style={styles.hint}>Select distance above</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (screen === 'summary') {
+        const scoringSG = stats?.bucketStrokesGained?.scoring?.sg || 0;
+        
+        return (
+          <div style={styles.container}>
+            <div style={styles.pageWrapper}>
+              <div style={styles.summaryHeader}>
+                <h1 style={styles.summaryTitle}>Session Complete</h1>
+                <p style={styles.summaryDate}>
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+                <div style={styles.setupSummary}>
+                  <span>{sessionSetup.putter}</span>
+                  <span style={styles.setupBadge}>{getBallMarkingLabel(sessionSetup.ballMarking)}</span>
+                </div>
+              </div>
+
+              <div style={styles.tabNav}>
+                {['overview', 'tendencies'].map(tab => (
+                  <button
+                    key={tab}
+                    style={{ ...styles.tabBtn, ...(summaryTab === tab ? styles.tabBtnActive : {}) }}
+                    onClick={() => setSummaryTab(tab)}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {summaryTab === 'overview' && (
+                <>
+                  <div style={{
+                    ...styles.sgCard,
+                    borderTopColor: stats?.strokesGained >= 0 ? '#2d5016' : '#c4785a'
+                  }}>
+                    <div style={styles.sgLabel}>Strokes Gained vs PGA Tour</div>
+                    <div style={{
+                      ...styles.sgValue,
+                      color: stats?.strokesGained >= 0 ? '#2d5016' : '#c4785a'
+                    }}>
+                      {stats?.strokesGained >= 0 ? '+' : ''}{stats?.strokesGained.toFixed(2)}
+                    </div>
+                    <div style={styles.sgSubtext}>
+                      {stats?.strokesGained >= 0 ? 'Better than tour average' : 'Below tour average'}
+                    </div>
+                  </div>
+
+                  <div style={styles.statsRow}>
+                    <div style={styles.statCard}>
+                      <span style={styles.statValue}>{stats?.totalPutts}</span>
+                      <span style={styles.statLabel}>Total</span>
+                    </div>
+                    <div style={styles.statCard}>
+                      <span style={{ ...styles.statValue, color: '#2d5016' }}>{stats?.onePutts}</span>
+                      <span style={styles.statLabel}>1-Putts</span>
+                    </div>
+                    <div style={styles.statCard}>
+                      <span style={styles.statValue}>{stats?.twoPutts}</span>
+                      <span style={styles.statLabel}>2-Putts</span>
+                    </div>
+                    <div style={styles.statCard}>
+                      <span style={{ ...styles.statValue, ...(stats?.threePutts > 0 ? { color: '#c4785a' } : {}) }}>
+                        {stats?.threePutts}
+                      </span>
+                      <span style={styles.statLabel}>3-Putts</span>
+                    </div>
+                  </div>
+
+                  <div style={styles.card}>
+                    <h3 style={styles.cardTitle}>Strokes Gained by Distance</h3>
+                    <div style={styles.sgBucketList}>
+                      {DISTANCE_BUCKETS.map(bucket => {
+                        const data = stats?.bucketStrokesGained[bucket.key];
+                        if (!data || data.count === 0) return null;
+                        return (
+                          <div key={bucket.key} style={styles.sgBucketRow}>
+                            <div style={styles.sgBucketInfo}>
+                              <span style={styles.sgBucketName}>{bucket.name}</span>
+                              <span style={styles.sgBucketCount}>{data.count} putts</span>
+                            </div>
+                            <span style={{
+                              ...styles.sgBucketValue,
+                              color: data.sg >= 0 ? '#2d5016' : '#c4785a'
+                            }}>
+                              {data.sg >= 0 ? '+' : ''}{data.sg.toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={styles.card}>
+                    <h3 style={styles.cardTitle}>Read Accuracy</h3>
+                    <div style={styles.accuracyRow}>
+                      <div style={styles.accuracyItem}>
+                        <div style={styles.accuracyValue}>{Math.round((stats?.speedCorrect / 18) * 100)}%</div>
+                        <div style={styles.accuracyLabel}>Speed</div>
+                        <div style={styles.accuracyBar}>
+                          <div style={{ ...styles.accuracyFill, width: `${(stats?.speedCorrect / 18) * 100}%` }}></div>
+                        </div>
+                      </div>
+                      <div style={styles.accuracyItem}>
+                        <div style={styles.accuracyValue}>{Math.round((stats?.lineCorrect / 18) * 100)}%</div>
+                        <div style={styles.accuracyLabel}>Line</div>
+                        <div style={styles.accuracyBar}>
+                          <div style={{ ...styles.accuracyFill, width: `${(stats?.lineCorrect / 18) * 100}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {summaryTab === 'tendencies' && (
+                <>
+                  {stats?.missCount > 0 ? (
+                    <>
+                      <div style={styles.card}>
+                        <h3 style={styles.cardTitle}>Speed Control</h3>
+                        <BalanceIndicator 
+                          value={stats.speedBalance} 
+                          leftLabel="Short" 
+                          rightLabel="Long"
+                        />
+                        <div style={styles.tendencyStats}>
+                          <div style={styles.tendencyStat}>
+                            <span style={styles.tendencyCount}>{stats.speedMisses.slow}</span>
+                            <span style={styles.tendencyLabel}>Short misses</span>
+                          </div>
+                          <div style={styles.tendencyStat}>
+                            <span style={styles.tendencyCount}>{stats.speedMisses.fast}</span>
+                            <span style={styles.tendencyLabel}>Long misses</span>
+                          </div>
+                        </div>
+                        <p style={styles.tendencyTip}>
+                          Ideal: 50% short, 50% long. This indicates consistent speed control with proper pace.
+                        </p>
+                      </div>
+
+                      <div style={styles.card}>
+                        <h3 style={styles.cardTitle}>Direction Control</h3>
+                        <BalanceIndicator 
+                          value={stats.directionBalance} 
+                          leftLabel="Left" 
+                          rightLabel="Right"
+                        />
+                        <div style={styles.tendencyStats}>
+                          <div style={styles.tendencyStat}>
+                            <span style={styles.tendencyCount}>{stats.directionMisses.left}</span>
+                            <span style={styles.tendencyLabel}>Left misses</span>
+                          </div>
+                          <div style={styles.tendencyStat}>
+                            <span style={styles.tendencyCount}>{stats.directionMisses.right}</span>
+                            <span style={styles.tendencyLabel}>Right misses</span>
+                          </div>
+                        </div>
+                        <p style={styles.tendencyTip}>
+                          Ideal: 50% left, 50% right. This indicates accurate green reading and consistent aim.
+                        </p>
+                      </div>
+
+                      {trends && (
+                        <div style={styles.card}>
+                          <h3 style={styles.cardTitle}>vs. Your Average</h3>
+                          <div style={styles.trendCompareTable}>
+                            <div style={styles.trendCompareHeader}>
+                              <span>Metric</span>
+                              <span>Today</span>
+                              <span>Avg</span>
+                              <span>Trend</span>
+                            </div>
+                            
+                            {(() => {
+                              const trend = getTrendIndicator(stats.speedBalance, trends.avgSpeed, 'balance');
+                              return (
+                                <div style={styles.trendCompareDataRow}>
+                                  <span style={styles.trendMetricName}>Speed Balance</span>
+                                  <span>{stats.speedBalance.toFixed(0)}%</span>
+                                  <span style={{ color: '#5a6666' }}>{trends.avgSpeed.toFixed(0)}%</span>
+                                  <span style={{ ...styles.trendIndicator, color: trend.color }}>
+                                    {trend.icon} {trend.label}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                            
+                            {(() => {
+                              const trend = getTrendIndicator(stats.directionBalance, trends.avgDir, 'balance');
+                              return (
+                                <div style={styles.trendCompareDataRow}>
+                                  <span style={styles.trendMetricName}>Direction Balance</span>
+                                  <span>{stats.directionBalance.toFixed(0)}%</span>
+                                  <span style={{ color: '#5a6666' }}>{trends.avgDir.toFixed(0)}%</span>
+                                  <span style={{ ...styles.trendIndicator, color: trend.color }}>
+                                    {trend.icon} {trend.label}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                            
+                            {(() => {
+                              const trend = getTrendIndicator(stats.strokesGained, trends.avgSG, 'sg');
+                              return (
+                                <div style={styles.trendCompareDataRow}>
+                                  <span style={styles.trendMetricName}>Total SG</span>
+                                  <span style={{ color: stats.strokesGained >= 0 ? '#2d5016' : '#c4785a' }}>
+                                    {stats.strokesGained >= 0 ? '+' : ''}{stats.strokesGained.toFixed(2)}
+                                  </span>
+                                  <span style={{ color: trends.avgSG >= 0 ? '#2d5016' : '#c4785a' }}>
+                                    {trends.avgSG >= 0 ? '+' : ''}{trends.avgSG.toFixed(2)}
+                                  </span>
+                                  <span style={{ ...styles.trendIndicator, color: trend.color }}>
+                                    {trend.icon} {trend.label}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                            
+                            {(() => {
+                              const trend = getTrendIndicator(scoringSG, trends.avgScoringSG, 'sg');
+                              return (
+                                <div style={styles.trendCompareDataRow}>
+                                  <span style={styles.trendMetricName}>SG 5-10 ft</span>
+                                  <span style={{ color: scoringSG >= 0 ? '#2d5016' : '#c4785a' }}>
+                                    {scoringSG >= 0 ? '+' : ''}{scoringSG.toFixed(2)}
+                                  </span>
+                                  <span style={{ color: trends.avgScoringSG >= 0 ? '#2d5016' : '#c4785a' }}>
+                                    {trends.avgScoringSG >= 0 ? '+' : ''}{trends.avgScoringSG.toFixed(2)}
+                                  </span>
+                                  <span style={{ ...styles.trendIndicator, color: trend.color }}>
+                                    {trend.icon} {trend.label}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <p style={styles.trendNote}>
+                            The 5-10 ft scoring range is where great putters separate themselves.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div style={styles.card}>
+                      <p style={{ textAlign: 'center', color: '#5a6666' }}>
+                        No misses to analyze! Perfect putting session.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <button style={styles.primaryButton} onClick={goToSetup}>
+                New Session
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+    }
+
+    const styles = {
+      container: {
+        minHeight: '100vh',
+        background: '#f5f4f0',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        color: '#2c3333',
+        lineHeight: 1.7,
+      },
+      pageWrapper: {
+        maxWidth: '480px',
+        margin: '0 auto',
+        padding: '24px 20px 40px',
+      },
+      welcomeCard: {
+        maxWidth: '420px',
+        margin: '0 auto',
+        padding: '48px 24px 40px',
+        textAlign: 'center',
+      },
+      logoContainer: { marginBottom: '28px' },
+      logo: { width: '90px', height: '90px', margin: '0 auto' },
+      title: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '40px',
+        fontWeight: '600',
+        color: '#2d5016',
+        margin: '0 0 6px 0',
+        letterSpacing: '-0.5px',
+      },
+      subtitle: {
+        fontSize: '15px',
+        color: '#5a6666',
+        margin: '0 0 32px 0',
+      },
+      trendCard: {
+        background: '#fafaf8',
+        borderRadius: '2px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.04)',
+        textAlign: 'left',
+      },
+      trendTitle: {
+        fontSize: '12px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        marginBottom: '12px',
+        fontWeight: '500',
+      },
+      trendRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '14px',
+        padding: '6px 0',
+        borderBottom: '1px solid rgba(0,0,0,0.04)',
+      },
+      infoCard: {
+        background: '#fafaf8',
+        borderRadius: '2px',
+        padding: '24px',
+        marginBottom: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.04)',
+      },
+      infoLabel: {
+        fontSize: '13px',
+        color: '#5a6666',
+        margin: '0 0 16px 0',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        fontWeight: '500',
+      },
+      distributionGrid: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '6px',
+        justifyContent: 'center',
+      },
+      distItem: {
+        fontSize: '12px',
+        color: '#2c3333',
+        padding: '5px 10px',
+        background: '#f5f4f0',
+        borderRadius: '2px',
+      },
+      distCount: {
+        fontWeight: '600',
+        color: '#2d5016',
+        marginRight: '4px',
+      },
+      primaryButton: {
+        width: '100%',
+        padding: '16px 32px',
+        fontSize: '15px',
+        fontWeight: '600',
+        color: '#fafaf8',
+        background: '#2d5016',
+        border: 'none',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+        letterSpacing: '0.3px',
+        marginTop: '8px',
+      },
+      secondaryButton: {
+        width: '100%',
+        padding: '14px 32px',
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#2d5016',
+        background: 'transparent',
+        border: '1px solid #2d5016',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+        marginTop: '12px',
+      },
+      topNav: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px',
+      },
+      backButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '8px 12px',
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#5a6666',
+        background: 'transparent',
+        border: '1px solid rgba(0,0,0,0.1)',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      holeLabel: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '18px',
+        fontWeight: '600',
+        color: '#2d5016',
+      },
+      progressContainer: { marginBottom: '24px' },
+      progressTrack: {
+        height: '3px',
+        background: 'rgba(45, 80, 22, 0.15)',
+        borderRadius: '2px',
+        overflow: 'hidden',
+      },
+      progressFill: {
+        height: '100%',
+        background: '#2d5016',
+        transition: 'width 300ms ease',
+      },
+      card: {
+        background: '#fafaf8',
+        borderRadius: '2px',
+        padding: '24px',
+        marginBottom: '16px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)',
+        border: '1px solid rgba(0,0,0,0.04)',
+      },
+      cardTitle: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '17px',
+        fontWeight: '600',
+        color: '#2c3333',
+        margin: '0 0 18px 0',
+        textAlign: 'center',
+      },
+      textInput: {
+        width: '100%',
+        padding: '14px 16px',
+        fontSize: '15px',
+        color: '#2c3333',
+        background: '#f5f4f0',
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '2px',
+        outline: 'none',
+        boxSizing: 'border-box',
+        fontFamily: 'inherit',
+      },
+      putterChips: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        marginTop: '12px',
+      },
+      putterChip: {
+        padding: '8px 14px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#5a6666',
+        background: '#f5f4f0',
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      putterChipActive: {
+        background: '#2d5016',
+        borderColor: '#2d5016',
+        color: '#fafaf8',
+      },
+      setupDescription: {
+        fontSize: '14px',
+        color: '#5a6666',
+        textAlign: 'center',
+        margin: '0 0 16px 0',
+      },
+      markingGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '12px',
+      },
+      markingBtn: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '20px 12px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#2d5016',
+        background: '#f5f4f0',
+        border: '1px solid rgba(45, 80, 22, 0.2)',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      markingBtnActive: {
+        background: '#2d5016',
+        borderColor: '#2d5016',
+        color: '#fafaf8',
+      },
+      markingLabel: {
+        fontSize: '12px',
+        textAlign: 'center',
+        lineHeight: 1.3,
+      },
+      distanceDisplay: { textAlign: 'center', marginBottom: '8px' },
+      distanceValue: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '68px',
+        fontWeight: '600',
+        color: '#2d5016',
+        lineHeight: 1,
+        display: 'block',
+      },
+      distanceLabel: {
+        fontSize: '13px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+        letterSpacing: '2px',
+        display: 'block',
+      },
+      expectedPutts: {
+        textAlign: 'center',
+        fontSize: '13px',
+        color: '#5a6666',
+        marginBottom: '20px',
+      },
+      conditionsContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '20px',
+      },
+      condition: { display: 'flex', alignItems: 'center', gap: '6px' },
+      conditionIcon: { fontSize: '16px', color: '#2d5016', fontWeight: '600' },
+      conditionText: { fontSize: '14px', color: '#2c3333', fontWeight: '500' },
+      conditionDivider: { width: '1px', height: '18px', background: 'rgba(0,0,0,0.1)' },
+      toggleSection: { display: 'flex', flexDirection: 'column', gap: '14px' },
+      toggleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+      toggleLabel: { fontSize: '14px', fontWeight: '500', color: '#2c3333' },
+      toggleGroup: { display: 'flex', gap: '8px' },
+      toggleBtn: {
+        padding: '8px 14px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#5a6666',
+        background: '#f5f4f0',
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      toggleActive: { background: '#2d5016', borderColor: '#2d5016', color: '#fafaf8' },
+      toggleIncorrect: { background: '#c4785a', borderColor: '#c4785a', color: '#fafaf8' },
+      resultGrid: { display: 'flex', flexDirection: 'column', gap: '8px' },
+      resultRow: { display: 'flex', gap: '8px' },
+      resultBtn: {
+        flex: 1,
+        padding: '14px 8px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#2c3333',
+        background: '#f5f4f0',
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      madeBtn: { background: '#2d5016', borderColor: '#2d5016', color: '#fafaf8', fontWeight: '600' },
+      missNotice: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        padding: '12px 16px',
+        background: 'rgba(196, 120, 90, 0.1)',
+        borderRadius: '2px',
+        marginBottom: '16px',
+      },
+      missNoticeLabel: { fontSize: '13px', color: '#5a6666' },
+      missNoticeValue: { fontSize: '14px', fontWeight: '600', color: '#c4785a' },
+      distanceGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' },
+      distanceBtn: {
+        padding: '14px 8px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#2c3333',
+        background: '#f5f4f0',
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      distanceBtnActive: { background: '#2d5016', borderColor: '#2d5016', color: '#fafaf8' },
+      makeButtonRow: { display: 'flex', gap: '12px' },
+      makeBtn: {
+        flex: 1,
+        padding: '18px',
+        fontSize: '15px',
+        fontWeight: '600',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+        border: 'none',
+      },
+      madeBtnLarge: { background: '#2d5016', color: '#fafaf8' },
+      missedBtn: { background: '#f5f4f0', color: '#c4785a', border: '1.5px solid #c4785a' },
+      btnDisabled: { opacity: 0.4, cursor: 'not-allowed' },
+      hint: { fontSize: '13px', color: '#5a6666', textAlign: 'center', margin: '12px 0 0 0' },
+      summaryHeader: { textAlign: 'center', marginBottom: '20px' },
+      summaryTitle: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '28px',
+        fontWeight: '600',
+        color: '#2d5016',
+        margin: '0 0 4px 0',
+      },
+      summaryDate: { fontSize: '13px', color: '#5a6666', margin: '0 0 8px 0' },
+      setupSummary: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        fontSize: '14px',
+        color: '#2c3333',
+        fontWeight: '500',
+      },
+      setupBadge: {
+        fontSize: '11px',
+        color: '#2d5016',
+        background: 'rgba(45, 80, 22, 0.1)',
+        padding: '4px 8px',
+        borderRadius: '2px',
+        fontWeight: '500',
+      },
+      tabNav: {
+        display: 'flex',
+        gap: '4px',
+        marginBottom: '20px',
+        background: '#f5f4f0',
+        padding: '4px',
+        borderRadius: '2px',
+      },
+      tabBtn: {
+        flex: 1,
+        padding: '10px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#5a6666',
+        background: 'transparent',
+        border: 'none',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        transition: 'all 250ms ease',
+      },
+      tabBtnActive: { background: '#fafaf8', color: '#2d5016', fontWeight: '600' },
+      sgCard: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '28px',
+        background: '#fafaf8',
+        borderRadius: '2px',
+        marginBottom: '16px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.04)',
+        borderTop: '3px solid #2d5016',
+      },
+      sgLabel: {
+        fontSize: '12px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+        letterSpacing: '1px',
+        marginBottom: '8px',
+      },
+      sgValue: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '52px',
+        fontWeight: '600',
+        lineHeight: 1,
+      },
+      sgSubtext: { fontSize: '13px', color: '#5a6666', marginTop: '8px' },
+      statsRow: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '10px',
+        marginBottom: '16px',
+      },
+      statCard: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '16px 8px',
+        background: '#fafaf8',
+        borderRadius: '2px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.04)',
+      },
+      statValue: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '28px',
+        fontWeight: '600',
+        color: '#2c3333',
+        lineHeight: 1,
+      },
+      statLabel: {
+        fontSize: '11px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        marginTop: '4px',
+      },
+      sgBucketList: { display: 'flex', flexDirection: 'column', gap: '10px' },
+      sgBucketRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 14px',
+        background: '#f5f4f0',
+        borderRadius: '2px',
+      },
+      sgBucketInfo: { display: 'flex', flexDirection: 'column' },
+      sgBucketName: { fontSize: '14px', fontWeight: '500', color: '#2c3333' },
+      sgBucketCount: { fontSize: '12px', color: '#5a6666' },
+      sgBucketValue: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '20px',
+        fontWeight: '600',
+      },
+      accuracyRow: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' },
+      accuracyItem: { textAlign: 'center' },
+      accuracyValue: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '26px',
+        fontWeight: '600',
+        color: '#2d5016',
+      },
+      accuracyLabel: {
+        fontSize: '11px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        marginBottom: '8px',
+      },
+      accuracyBar: {
+        height: '4px',
+        background: 'rgba(45, 80, 22, 0.15)',
+        borderRadius: '2px',
+        overflow: 'hidden',
+      },
+      accuracyFill: { height: '100%', background: '#2d5016', transition: 'width 500ms ease' },
+      balanceContainer: { marginBottom: '20px' },
+      balanceTitle: {
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#2c3333',
+        marginBottom: '12px',
+        textAlign: 'center',
+      },
+      balanceTrack: {
+        position: 'relative',
+        height: '8px',
+        background: '#f5f4f0',
+        borderRadius: '4px',
+        marginBottom: '8px',
+      },
+      balanceIdealZone: {
+        position: 'absolute',
+        left: '35%',
+        right: '35%',
+        top: 0,
+        bottom: 0,
+        background: 'rgba(45, 80, 22, 0.15)',
+        borderRadius: '4px',
+      },
+      balanceMarker: {
+        position: 'absolute',
+        top: '-4px',
+        width: '16px',
+        height: '16px',
+        borderRadius: '50%',
+        transform: 'translateX(-50%)',
+        border: '2px solid #fafaf8',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      },
+      balanceLabels: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '11px',
+        color: '#5a6666',
+      },
+      balanceCenter: { color: '#2d5016', fontWeight: '500' },
+      balanceStatus: {
+        textAlign: 'center',
+        fontSize: '13px',
+        fontWeight: '500',
+        marginTop: '8px',
+      },
+      tendencyStats: {
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '40px',
+        marginTop: '16px',
+      },
+      tendencyStat: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      },
+      tendencyCount: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '28px',
+        fontWeight: '600',
+        color: '#2c3333',
+      },
+      tendencyLabel: { fontSize: '12px', color: '#5a6666' },
+      tendencyTip: {
+        fontSize: '12px',
+        color: '#5a6666',
+        textAlign: 'center',
+        marginTop: '16px',
+        padding: '12px',
+        background: '#f5f4f0',
+        borderRadius: '2px',
+        lineHeight: 1.5,
+      },
+      trendCompareTable: {
+        display: 'flex',
+        flexDirection: 'column',
+      },
+      trendCompareHeader: {
+        display: 'grid',
+        gridTemplateColumns: '1.4fr 0.9fr 0.9fr 1.1fr',
+        gap: '8px',
+        padding: '8px 0',
+        borderBottom: '1px solid rgba(0,0,0,0.08)',
+        fontSize: '11px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        fontWeight: '600',
+      },
+      trendCompareDataRow: {
+        display: 'grid',
+        gridTemplateColumns: '1.4fr 0.9fr 0.9fr 1.1fr',
+        gap: '8px',
+        padding: '12px 0',
+        borderBottom: '1px solid rgba(0,0,0,0.04)',
+        fontSize: '13px',
+        alignItems: 'center',
+      },
+      trendMetricName: {
+        fontWeight: '500',
+        color: '#2c3333',
+      },
+      trendIndicator: {
+        fontSize: '11px',
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '3px',
+      },
+      trendNote: {
+        fontSize: '12px',
+        color: '#5a6666',
+        textAlign: 'center',
+        marginTop: '16px',
+        fontStyle: 'italic',
+      },
+      historyList: { display: 'flex', flexDirection: 'column', gap: '12px' },
+      historyCard: {
+        background: '#fafaf8',
+        borderRadius: '2px',
+        padding: '16px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.04)',
+      },
+      historyHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '8px',
+      },
+      historyDate: {
+        fontSize: '14px',
+        fontWeight: '600',
+        color: '#2c3333',
+      },
+      historySG: {
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: '18px',
+        fontWeight: '600',
+      },
+      historyDetails: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '12px',
+      },
+      historyPutter: {
+        fontSize: '13px',
+        color: '#5a6666',
+      },
+      historyBadge: {
+        fontSize: '10px',
+        color: '#2d5016',
+        background: 'rgba(45, 80, 22, 0.1)',
+        padding: '3px 6px',
+        borderRadius: '2px',
+        fontWeight: '500',
+      },
+      historyStats: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        paddingTop: '12px',
+        borderTop: '1px solid rgba(0,0,0,0.04)',
+      },
+      historyStatItem: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      },
+      historyStatValue: {
+        fontSize: '16px',
+        fontWeight: '600',
+        color: '#2c3333',
+      },
+      historyStatLabel: {
+        fontSize: '10px',
+        color: '#5a6666',
+        textTransform: 'uppercase',
+      },
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<StackPuttingTracker />);
+  </script>
+</body>
+</html>

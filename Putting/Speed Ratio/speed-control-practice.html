@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Speed Control Practice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f4f0;
+            color: #2c3333;
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            line-height: 1.7;
+        }
+
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 24px 0 32px 0;
+            border-bottom: 1px solid #d4c5b0;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5em;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: #2d5016;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 0.95em;
+            color: #6b7280;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .session-container {
+            background: #fafaf8;
+            border-radius: 2px;
+            padding: 28px;
+            margin-bottom: 24px;
+            border: 1px solid #e8e3d8;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .hole-info {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .hole-number {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .distance-display {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4.5em;
+            font-weight: 300;
+            color: #2d5016;
+            margin: 24px 0;
+            letter-spacing: 1px;
+        }
+
+        .distance-label {
+            font-size: 0.95em;
+            color: #6b7280;
+            letter-spacing: 0.3px;
+        }
+
+        .input-group {
+            margin-bottom: 28px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.9em;
+            color: #2d5016;
+            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #d4c5b0;
+            border-radius: 2px;
+            padding: 14px;
+            font-size: 1.1em;
+            color: #2c3333;
+            font-family: 'Cormorant Garamond', serif;
+            text-align: center;
+            transition: all 250ms ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #2d5016;
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid #d4c5b0;
+            border-radius: 2px;
+            font-size: 1em;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 250ms ease;
+            letter-spacing: 0.3px;
+            background: #ffffff;
+            color: #2c3333;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            border-color: #b8956a;
+            background: #fafaf8;
+        }
+
+        .btn.selected {
+            background: #2d5016;
+            border-color: #2d5016;
+            color: #fafaf8;
+        }
+
+        .btn-primary {
+            background: #2d5016;
+            color: #fafaf8;
+            border: none;
+            font-weight: 600;
+            padding: 16px;
+            font-size: 1.05em;
+            width: 100%;
+            transition: all 250ms ease;
+        }
+
+        .btn-primary:hover {
+            background: #234010;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(45, 80, 22, 0.2);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #2d5016;
+            border: 1px solid #d4c5b0;
+            font-weight: 500;
+            padding: 14px;
+            font-size: 0.95em;
+            margin-top: 12px;
+            width: 100%;
+            transition: all 250ms ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: #b8956a;
+            background: #fafaf8;
+        }
+
+        .miss-details {
+            display: none;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e8e3d8;
+        }
+
+        .miss-details.visible {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e8e3d8;
+            border-radius: 2px;
+            margin: 28px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #b8956a;
+            transition: width 250ms ease;
+            border-radius: 2px;
+        }
+
+        .summary-container {
+            background: #fafaf8;
+            border-radius: 2px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid #e8e3d8;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2em;
+            color: #2d5016;
+            text-align: center;
+            margin-bottom: 32px;
+            letter-spacing: 1px;
+            font-weight: 400;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            border-radius: 2px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid #e8e3d8;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            transition: all 250ms ease;
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .metric-card.highlight {
+            background: #fdfcfa;
+            border: 2px solid #b8956a;
+            box-shadow: 0 2px 6px rgba(184, 149, 106, 0.15);
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5em;
+            color: #2d5016;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value.large {
+            font-size: 3.5em;
+        }
+
+        .metric-subtitle {
+            font-size: 0.85em;
+            color: #9ca3af;
+            margin-top: 8px;
+            letter-spacing: 0.2px;
+        }
+
+        .strokes-gained {
+            text-align: center;
+            padding: 28px;
+            margin: 24px 0;
+            background: #ffffff;
+            border-radius: 2px;
+            border: 1px solid #e8e3d8;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .sg-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3em;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .sg-value.positive {
+            color: #2d5016;
+        }
+
+        .sg-value.negative {
+            color: #b85c3e;
+        }
+
+        .sg-label {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-top: 12px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .speed-analysis {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .breakdown-item {
+            background: #fafaf8;
+            padding: 16px;
+            border-radius: 2px;
+            text-align: center;
+            border: 1px solid #e8e3d8;
+        }
+
+        .breakdown-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2em;
+            color: #2d5016;
+            font-weight: 400;
+        }
+
+        .breakdown-label {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 40px 24px;
+        }
+
+        .start-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2em;
+            color: #2d5016;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            font-weight: 400;
+        }
+
+        .start-description {
+            font-size: 1em;
+            color: #6b7280;
+            line-height: 1.7;
+            margin-bottom: 32px;
+            letter-spacing: 0.2px;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin: 32px 0;
+            padding: 28px;
+            background: #ffffff;
+            border-radius: 2px;
+            border: 1px solid #e8e3d8;
+        }
+
+        .feature-item {
+            font-size: 0.95em;
+            color: #2c3333;
+            margin-bottom: 16px;
+            padding-left: 28px;
+            position: relative;
+            letter-spacing: 0.2px;
+        }
+
+        .feature-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #b8956a;
+            font-size: 1.5em;
+            line-height: 1;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .history-card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 2px;
+            text-align: center;
+            border: 1px solid #e8e3d8;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            transition: all 250ms ease;
+        }
+
+        .history-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .history-label {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-weight: 500;
+        }
+
+        .history-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2em;
+            color: #2d5016;
+            font-weight: 400;
+        }
+
+        .session-log {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 24px;
+        }
+
+        .log-entry {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            border-left: 3px solid #b8956a;
+            border-top: 1px solid #e8e3d8;
+            border-right: 1px solid #e8e3d8;
+            border-bottom: 1px solid #e8e3d8;
+            transition: all 250ms ease;
+        }
+
+        .log-entry:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .log-date {
+            font-size: 0.8em;
+            color: #9ca3af;
+            margin-bottom: 10px;
+            letter-spacing: 0.2px;
+        }
+
+        .log-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #6b7280;
+        }
+
+        .log-speed-ratio {
+            color: #2d5016;
+            font-weight: 600;
+            font-size: 1.2em;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 400px) {
+            .distance-display {
+                font-size: 3.5em;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .app-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Speed Control</h1>
+            <div class="subtitle">Lag Putting Mastery</div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="session-container start-screen">
+            <div class="start-title">18-Hole Speed Practice</div>
+            <div class="start-description">
+                Master lag putting with focused practice on distance control beyond 15 feet. Track your speed ratio against the tour standard of 1.5+.
+            </div>
+            <div class="feature-list">
+                <div class="feature-item">18 putts from 3-35 feet matching tour patterns</div>
+                <div class="feature-item">Speed ratio: Total distance ÷ Total miss (Target: 1.5+)</div>
+                <div class="feature-item">Detailed short putt execution analysis</div>
+                <div class="feature-item">Session history tracking with performance trends</div>
+            </div>
+            <button class="btn btn-primary" onclick="startSession()">Begin Practice</button>
+            <button class="btn btn-secondary" onclick="showHistory()">View History</button>
+        </div>
+
+        <!-- Practice Screen -->
+        <div id="practiceScreen" class="hidden">
+            <div class="session-container">
+                <div class="hole-info">
+                    <div class="hole-number">Hole <span id="currentHole">1</span> of 18</div>
+                    <div class="distance-display"><span id="currentDistance">15</span>'</div>
+                    <div class="distance-label">First Putt Distance</div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Total Putts to Hole Out</label>
+                    <input type="number" id="totalPutts" min="1" max="5" value="1" oninput="handlePuttsInput()">
+                </div>
+
+                <div id="missDetails" class="miss-details">
+                    <div class="input-group">
+                        <label class="input-label">First Putt Result</label>
+                        <div class="button-group">
+                            <button class="btn" id="btnShort" onclick="selectDirection('short')">Short</button>
+                            <button class="btn" id="btnLong" onclick="selectDirection('long')">Long</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Miss Distance (inches)</label>
+                        <input type="number" id="missDistance" min="0" step="1" placeholder="0">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="submitBtn" onclick="submitHole()">Next Hole</button>
+            </div>
+        </div>
+
+        <!-- Summary Screen -->
+        <div id="summaryScreen" class="hidden">
+            <div class="summary-container">
+                <div class="summary-title">Performance Summary</div>
+
+                <!-- Speed Ratio - Main Focus -->
+                <div class="metric-card highlight">
+                    <div class="metric-label">Speed Ratio (Putts >15 feet)</div>
+                    <div class="metric-value large" id="speedRatioValue">--</div>
+                    <div class="metric-subtitle" id="speedRatioSubtitle">Target: 1.5 or higher</div>
+                </div>
+
+                <!-- Performance vs Target/History -->
+                <div class="history-grid">
+                    <div class="history-card">
+                        <div class="history-label">vs Target (1.5)</div>
+                        <div class="history-value" id="vsTarget">--</div>
+                    </div>
+                    <div class="history-card">
+                        <div class="history-label">Your Best</div>
+                        <div class="history-value" id="bestRatio">--</div>
+                    </div>
+                    <div class="history-card">
+                        <div class="history-label">Avg Last 5</div>
+                        <div class="history-value" id="avgLast5">--</div>
+                    </div>
+                    <div class="history-card">
+                        <div class="history-label">All-Time Avg</div>
+                        <div class="history-value" id="allTimeAvg">--</div>
+                    </div>
+                </div>
+
+                <div class="strokes-gained">
+                    <div class="sg-value" id="sgValue">+0.0</div>
+                    <div class="sg-label">Strokes Gained vs PGA Tour</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Total Putts</div>
+                    <div class="metric-value" id="totalPuttsSummary">18</div>
+                </div>
+
+                <div class="speed-analysis">
+                    <div class="metric-card">
+                        <div class="metric-label">Short</div>
+                        <div class="metric-value" id="shortPercent">0%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Long</div>
+                        <div class="metric-value" id="longPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Critical Distance Performance -->
+                <div class="metric-card">
+                    <div class="metric-label">Putts Under 15 Feet (<span id="criticalCount">0</span> putts)</div>
+                    <div class="breakdown-grid">
+                        <div class="breakdown-item">
+                            <div class="breakdown-value" id="leftShortCount">0</div>
+                            <div class="breakdown-label">Left Short</div>
+                        </div>
+                        <div class="breakdown-item">
+                            <div class="breakdown-value" id="threePuttCount">0</div>
+                            <div class="breakdown-label">3-Putts</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="resetSession()">New Practice Session</button>
+                <button class="btn btn-secondary" onclick="showHistory()">View Full History</button>
+            </div>
+        </div>
+
+        <!-- History Screen -->
+        <div id="historyScreen" class="hidden">
+            <div class="summary-container">
+                <div class="summary-title">Session History</div>
+                
+                <div class="history-grid">
+                    <div class="history-card">
+                        <div class="history-label">Total Sessions</div>
+                        <div class="history-value" id="totalSessions">0</div>
+                    </div>
+                    <div class="history-card">
+                        <div class="history-label">Best Speed Ratio</div>
+                        <div class="history-value" id="historyBest">--</div>
+                    </div>
+                    <div class="history-card">
+                        <div class="history-label">Average</div>
+                        <div class="history-value" id="historyAvg">--</div>
+                    </div>
+                    <div class="history-card">
+                        <div class="history-label">Last 5 Avg</div>
+                        <div class="history-value" id="historyLast5">--</div>
+                    </div>
+                </div>
+
+                <div class="session-log" id="sessionLog">
+                    <!-- Session entries will be added here -->
+                </div>
+
+                <button class="btn btn-primary" onclick="backToStart()">Back to Start</button>
+                <button class="btn btn-secondary" onclick="clearHistory()">Clear History</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PGA Tour Baseline Data (Make % by distance)
+        const PGA_BASELINE = {
+            3: 0.990, 4: 0.960, 5: 0.910, 6: 0.850, 7: 0.780, 8: 0.720,
+            9: 0.660, 10: 0.600, 11: 0.550, 12: 0.500, 13: 0.460, 14: 0.420,
+            15: 0.390, 16: 0.360, 17: 0.340, 18: 0.320, 19: 0.300, 20: 0.280,
+            21: 0.265, 22: 0.250, 23: 0.235, 24: 0.220, 25: 0.210, 26: 0.200,
+            27: 0.190, 28: 0.180, 29: 0.172, 30: 0.164, 31: 0.156, 32: 0.148,
+            33: 0.142, 34: 0.136, 35: 0.130
+        };
+
+        // Session State
+        let sessionData = {
+            holes: [],
+            currentHole: 0,
+            distances: []
+        };
+
+        let currentDirection = null;
+
+        // Generate realistic distance distribution (3-35 feet only)
+        function generateDistances() {
+            const distances = [];
+            
+            // 3-10 feet: 20% (3-4 putts)
+            for (let i = 0; i < 4; i++) {
+                distances.push(Math.floor(Math.random() * 8) + 3);
+            }
+            
+            // 10-20 feet: 30% (5-6 putts)
+            for (let i = 0; i < 5; i++) {
+                distances.push(Math.floor(Math.random() * 11) + 10);
+            }
+            
+            // 20-35 feet: 50% (9 putts) - emphasis on lag putting
+            for (let i = 0; i < 9; i++) {
+                distances.push(Math.floor(Math.random() * 16) + 20);
+            }
+            
+            // Shuffle array
+            return distances.sort(() => Math.random() - 0.5);
+        }
+
+        function startSession() {
+            sessionData = {
+                holes: [],
+                currentHole: 0,
+                distances: generateDistances()
+            };
+            
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('practiceScreen').classList.remove('hidden');
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const holeNum = sessionData.currentHole + 1;
+            const distance = sessionData.distances[sessionData.currentHole];
+            
+            document.getElementById('currentHole').textContent = holeNum;
+            document.getElementById('currentDistance').textContent = distance;
+            document.getElementById('progressFill').style.width = ((holeNum - 1) / 18 * 100) + '%';
+            
+            // Reset inputs
+            document.getElementById('totalPutts').value = '1';
+            document.getElementById('missDistance').value = '';
+            document.getElementById('missDetails').classList.remove('visible');
+            document.getElementById('btnShort').classList.remove('selected');
+            document.getElementById('btnLong').classList.remove('selected');
+            currentDirection = null;
+        }
+
+        function handlePuttsInput() {
+            const putts = parseInt(document.getElementById('totalPutts').value);
+            const missDetails = document.getElementById('missDetails');
+            
+            if (putts > 1) {
+                missDetails.classList.add('visible');
+            } else {
+                missDetails.classList.remove('visible');
+            }
+        }
+
+        function selectDirection(direction) {
+            currentDirection = direction;
+            document.getElementById('btnShort').classList.toggle('selected', direction === 'short');
+            document.getElementById('btnLong').classList.toggle('selected', direction === 'long');
+        }
+
+        function submitHole() {
+            const totalPutts = parseInt(document.getElementById('totalPutts').value);
+            const missDistance = parseInt(document.getElementById('missDistance').value) || 0;
+            const distance = sessionData.distances[sessionData.currentHole];
+            
+            // Validation
+            if (!totalPutts || totalPutts < 1) {
+                alert('Please enter the number of putts');
+                return;
+            }
+            
+            if (totalPutts > 1 && !currentDirection) {
+                alert('Please indicate if first putt was short or long');
+                return;
+            }
+            
+            if (totalPutts > 1 && !missDistance) {
+                alert('Please enter miss distance in inches');
+                return;
+            }
+            
+            // Store hole data
+            const holeData = {
+                distance: distance,
+                putts: totalPutts,
+                made: totalPutts === 1,
+                direction: totalPutts > 1 ? currentDirection : null,
+                missInches: totalPutts > 1 ? missDistance : 0
+            };
+            
+            sessionData.holes.push(holeData);
+            sessionData.currentHole++;
+            
+            // Check if session complete
+            if (sessionData.currentHole >= 18) {
+                showSummary();
+            } else {
+                updateDisplay();
+            }
+        }
+
+        function calculateStrokesGained() {
+            let totalSG = 0;
+            
+            sessionData.holes.forEach(hole => {
+                const distance = hole.distance;
+                const putts = hole.putts;
+                
+                // Get PGA baseline for this distance
+                const baseline = PGA_BASELINE[distance] || PGA_BASELINE[35];
+                
+                // Expected putts = 1 + (1 - make%)
+                const expectedPutts = 1 + (1 - baseline);
+                
+                // Strokes gained = expected - actual
+                const sg = expectedPutts - putts;
+                totalSG += sg;
+            });
+            
+            return totalSG;
+        }
+
+        function calculateSpeedRatio() {
+            // Only putts > 15 feet that were missed
+            const lagPutts = sessionData.holes.filter(h => h.distance > 15 && !h.made);
+            
+            if (lagPutts.length === 0) return null;
+            
+            // Total distance / Total miss distance (feet / inches)
+            const totalDistance = lagPutts.reduce((sum, h) => sum + h.distance, 0);
+            const totalMiss = lagPutts.reduce((sum, h) => sum + h.missInches, 0);
+            
+            if (totalMiss === 0) return null;
+            
+            return totalDistance / totalMiss;
+        }
+
+        function saveSessionToHistory(speedRatio, totalPutts, sg) {
+            const history = getHistory();
+            
+            const session = {
+                date: new Date().toISOString(),
+                speedRatio: speedRatio,
+                totalPutts: totalPutts,
+                strokesGained: sg
+            };
+            
+            history.unshift(session);
+            localStorage.setItem('speedControlHistory', JSON.stringify(history));
+        }
+
+        function getHistory() {
+            const stored = localStorage.getItem('speedControlHistory');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function getHistoryStats() {
+            const history = getHistory();
+            
+            if (history.length === 0) {
+                return {
+                    best: null,
+                    avgLast5: null,
+                    allTimeAvg: null,
+                    totalSessions: 0
+                };
+            }
+            
+            const ratios = history.map(s => s.speedRatio).filter(r => r !== null);
+            
+            const best = ratios.length > 0 ? Math.max(...ratios) : null;
+            
+            const last5 = ratios.slice(0, Math.min(5, ratios.length));
+            const avgLast5 = last5.length > 0 ? 
+                last5.reduce((a, b) => a + b, 0) / last5.length : null;
+            
+            const allTimeAvg = ratios.length > 0 ?
+                ratios.reduce((a, b) => a + b, 0) / ratios.length : null;
+            
+            return {
+                best,
+                avgLast5,
+                allTimeAvg,
+                totalSessions: history.length
+            };
+        }
+
+        function showSummary() {
+            // Calculate metrics
+            const totalPutts = sessionData.holes.reduce((sum, h) => sum + h.putts, 0);
+            const sg = calculateStrokesGained();
+            const speedRatio = calculateSpeedRatio();
+            
+            // Save to history
+            if (speedRatio !== null) {
+                saveSessionToHistory(speedRatio, totalPutts, sg);
+            }
+            
+            // Get history stats
+            const historyStats = getHistoryStats();
+            
+            // Direction analysis
+            const firstPutts = sessionData.holes.filter(h => h.direction !== null);
+            const shortCount = firstPutts.filter(h => h.direction === 'short').length;
+            const longCount = firstPutts.filter(h => h.direction === 'long').length;
+            const shortPercent = firstPutts.length > 0 ? (shortCount / firstPutts.length * 100) : 0;
+            const longPercent = firstPutts.length > 0 ? (longCount / firstPutts.length * 100) : 0;
+            
+            // Critical distance analysis (< 15 feet)
+            const criticalPutts = sessionData.holes.filter(h => h.distance < 15);
+            const leftShort = criticalPutts.filter(h => !h.made && h.direction === 'short').length;
+            const threePutts = criticalPutts.filter(h => h.putts >= 3).length;
+            
+            // Update display
+            document.getElementById('totalPuttsSummary').textContent = totalPutts;
+            document.getElementById('criticalCount').textContent = criticalPutts.length;
+            document.getElementById('leftShortCount').textContent = leftShort;
+            document.getElementById('threePuttCount').textContent = threePutts;
+            
+            const sgElement = document.getElementById('sgValue');
+            sgElement.textContent = (sg >= 0 ? '+' : '') + sg.toFixed(2);
+            sgElement.className = 'sg-value ' + (sg >= 0 ? 'positive' : 'negative');
+            
+            // Speed ratio display
+            if (speedRatio !== null) {
+                document.getElementById('speedRatioValue').textContent = speedRatio.toFixed(2);
+                
+                // vs Target
+                const diff = speedRatio - 1.5;
+                document.getElementById('vsTarget').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(2);
+            } else {
+                document.getElementById('speedRatioValue').textContent = '--';
+                document.getElementById('speedRatioSubtitle').textContent = 'No putts >15 feet were missed';
+                document.getElementById('vsTarget').textContent = '--';
+            }
+            
+            // History stats
+            document.getElementById('bestRatio').textContent = 
+                historyStats.best !== null ? historyStats.best.toFixed(2) : '--';
+            document.getElementById('avgLast5').textContent = 
+                historyStats.avgLast5 !== null ? historyStats.avgLast5.toFixed(2) : '--';
+            document.getElementById('allTimeAvg').textContent = 
+                historyStats.allTimeAvg !== null ? historyStats.allTimeAvg.toFixed(2) : '--';
+            
+            document.getElementById('shortPercent').textContent = shortPercent.toFixed(0) + '%';
+            document.getElementById('longPercent').textContent = longPercent.toFixed(0) + '%';
+            
+            // Show summary screen
+            document.getElementById('practiceScreen').classList.add('hidden');
+            document.getElementById('summaryScreen').classList.remove('hidden');
+        }
+
+        function showHistory() {
+            const history = getHistory();
+            const stats = getHistoryStats();
+            
+            document.getElementById('totalSessions').textContent = stats.totalSessions;
+            document.getElementById('historyBest').textContent = 
+                stats.best !== null ? stats.best.toFixed(2) : '--';
+            document.getElementById('historyAvg').textContent = 
+                stats.allTimeAvg !== null ? stats.allTimeAvg.toFixed(2) : '--';
+            document.getElementById('historyLast5').textContent = 
+                stats.avgLast5 !== null ? stats.avgLast5.toFixed(2) : '--';
+            
+            const logContainer = document.getElementById('sessionLog');
+            logContainer.innerHTML = '';
+            
+            if (history.length === 0) {
+                logContainer.innerHTML = '<div class="metric-subtitle" style="text-align: center; padding: 40px;">No sessions recorded yet</div>';
+            } else {
+                history.forEach(session => {
+                    const date = new Date(session.date);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry';
+                    entry.innerHTML = `
+                        <div class="log-date">${dateStr}</div>
+                        <div class="log-details">
+                            <span>Speed Ratio: <span class="log-speed-ratio">${session.speedRatio !== null ? session.speedRatio.toFixed(2) : '--'}</span></span>
+                            <span>Putts: ${session.totalPutts}</span>
+                            <span>SG: ${(session.strokesGained >= 0 ? '+' : '') + session.strokesGained.toFixed(2)}</span>
+                        </div>
+                    `;
+                    logContainer.appendChild(entry);
+                });
+            }
+            
+            // Hide all screens, show history
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('practiceScreen').classList.add('hidden');
+            document.getElementById('summaryScreen').classList.add('hidden');
+            document.getElementById('historyScreen').classList.remove('hidden');
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all session history?')) {
+                localStorage.removeItem('speedControlHistory');
+                showHistory();
+            }
+        }
+
+        function backToStart() {
+            document.getElementById('historyScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function resetSession() {
+            document.getElementById('summaryScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Line Test | Zambri Directional Accuracy</title>
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Line Test&quot;,&quot;short_name&quot;:&quot;Line Test&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23f5f4f0&quot;,&quot;theme_color&quot;:&quot;%232d5016&quot;}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ivory: #fafaf8;
+            --cream: #f5f4f0;
+            --forest: #2d5016;
+            --forest-light: #3d6b1f;
+            --gold: #b8956a;
+            --gold-light: #d4b896;
+            --charcoal: #2c3333;
+            --charcoal-light: #4a5555;
+            --sand: #e5e0d5;
+            --sand-dark: #c9c4b9;
+            --rust: #b54a32;
+            --rust-light: #d4715a;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(44, 51, 51, 0.08);
+            --shadow-md: 0 4px 12px rgba(44, 51, 51, 0.1);
+            --shadow-lg: 0 8px 24px rgba(44, 51, 51, 0.12);
+            --radius: 2px;
+            --transition: 250ms ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 400;
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--charcoal);
+            background: var(--cream);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 100px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 24px 0 32px;
+        }
+
+        .header h1 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--charcoal);
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            color: var(--charcoal-light);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 14px 16px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal-light);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .nav-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: var(--forest);
+            transition: width var(--transition);
+        }
+
+        .nav-tab.active {
+            color: var(--forest);
+        }
+
+        .nav-tab.active::after {
+            width: 60%;
+        }
+
+        .nav-tab:hover:not(.active) {
+            color: var(--charcoal);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--sand);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Performance Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 16px 8px;
+            background: var(--ivory);
+            border-radius: var(--radius);
+        }
+
+        .summary-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--charcoal-light);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .summary-value.highlight {
+            color: var(--forest);
+        }
+
+        .summary-value.gold {
+            color: var(--gold);
+        }
+
+        .summary-unit {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--charcoal-light);
+            margin-left: 2px;
+        }
+
+        /* Benchmarks */
+        .benchmark-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .benchmark-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--ivory);
+            border-radius: var(--radius);
+            border-left: 3px solid transparent;
+            transition: all var(--transition);
+        }
+
+        .benchmark-item.current {
+            border-left-color: var(--forest);
+            background: linear-gradient(90deg, rgba(45, 80, 22, 0.06) 0%, var(--ivory) 100%);
+        }
+
+        .benchmark-level {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .benchmark-range {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--charcoal-light);
+        }
+
+        .benchmark-item.current .benchmark-range {
+            color: var(--forest);
+        }
+
+        /* Session Setup */
+        .setup-section {
+            margin-bottom: 24px;
+        }
+
+        .setup-section h3 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--charcoal);
+            margin-bottom: 12px;
+        }
+
+        .club-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .club-input-group {
+            position: relative;
+        }
+
+        .club-input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--charcoal-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .club-input {
+            width: 100%;
+            padding: 10px 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--charcoal);
+            background: var(--ivory);
+            border: 1px solid var(--sand);
+            border-radius: var(--radius);
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .club-input:focus {
+            outline: none;
+            border-color: var(--forest);
+            background: var(--white);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 24px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition);
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--forest);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--forest-light);
+        }
+
+        .btn-secondary {
+            background: var(--sand);
+            color: var(--charcoal);
+        }
+
+        .btn-secondary:hover {
+            background: var(--sand-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--charcoal);
+            border: 1px solid var(--sand);
+        }
+
+        .btn-outline:hover {
+            background: var(--ivory);
+            border-color: var(--sand-dark);
+        }
+
+        .btn-danger {
+            background: var(--rust);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: var(--rust-light);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        /* Shot Entry */
+        .shot-entry {
+            margin-bottom: 20px;
+        }
+
+        .shot-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .shot-count {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .current-club {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--forest);
+            padding: 6px 12px;
+            background: rgba(45, 80, 22, 0.08);
+            border-radius: var(--radius);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--sand);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--forest) 0%, var(--forest-light) 100%);
+            border-radius: 3px;
+            transition: width var(--transition);
+        }
+
+        .distance-input-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .distance-label {
+            font-size: 13px;
+            color: var(--charcoal-light);
+            margin-bottom: 12px;
+        }
+
+        .direction-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .direction-btn {
+            flex: 1;
+            padding: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--radius);
+            border: 2px solid var(--sand);
+            background: var(--ivory);
+            color: var(--charcoal);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .direction-btn.active {
+            border-color: var(--forest);
+            background: rgba(45, 80, 22, 0.08);
+            color: var(--forest);
+        }
+
+        .distance-input-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .distance-input {
+            width: 120px;
+            padding: 16px;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--charcoal);
+            background: var(--ivory);
+            border: 2px solid var(--sand);
+            border-radius: var(--radius);
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .distance-input:focus {
+            outline: none;
+            border-color: var(--forest);
+            background: var(--white);
+        }
+
+        .distance-input-unit {
+            font-size: 16px;
+            color: var(--charcoal-light);
+        }
+
+        .quick-entry {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .quick-btn {
+            padding: 10px 16px;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--charcoal);
+            background: var(--white);
+            border: 1px solid var(--sand);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .quick-btn:hover {
+            background: var(--ivory);
+            border-color: var(--forest);
+            color: var(--forest);
+        }
+
+        /* Shot List */
+        .shot-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .shot-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--ivory);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+        }
+
+        .shot-item.dropped {
+            opacity: 0.5;
+            background: linear-gradient(90deg, rgba(181, 74, 50, 0.08) 0%, var(--ivory) 100%);
+        }
+
+        .shot-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .shot-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .shot-number {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--charcoal-light);
+            width: 24px;
+        }
+
+        .shot-club {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--forest);
+        }
+
+        .shot-distance {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .shot-direction {
+            font-size: 12px;
+            color: var(--charcoal-light);
+        }
+
+        .shot-item.dropped .shot-distance {
+            text-decoration: line-through;
+            color: var(--rust);
+        }
+
+        .dropped-badge {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--rust);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Running Total */
+        .running-total {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(90deg, rgba(45, 80, 22, 0.08) 0%, var(--ivory) 100%);
+            border-top: 1px solid var(--sand);
+        }
+
+        .total-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .total-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--forest);
+        }
+
+        /* Session History */
+        .history-item {
+            padding: 16px;
+            background: var(--ivory);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .history-item:hover {
+            background: var(--sand);
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .history-date {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .history-score {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--forest);
+        }
+
+        .history-score span {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--charcoal-light);
+        }
+
+        .history-clubs {
+            font-size: 12px;
+            color: var(--charcoal-light);
+        }
+
+        .history-pb {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            background: var(--gold);
+            color: var(--white);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: var(--radius);
+            margin-left: 8px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--charcoal-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(44, 51, 51, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--sand);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ivory);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--charcoal-light);
+            transition: all var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--sand);
+            color: var(--charcoal);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--sand);
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-footer .btn {
+            flex: 1;
+        }
+
+        /* Final Score Display */
+        .final-score-display {
+            text-align: center;
+            padding: 32px 20px;
+        }
+
+        .final-score-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .final-score-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 56px;
+            font-weight: 700;
+            color: var(--forest);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .final-score-unit {
+            font-size: 14px;
+            color: var(--charcoal-light);
+        }
+
+        .final-benchmark {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: var(--ivory);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .pb-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: var(--white);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius);
+        }
+
+        /* Info Section */
+        .info-section {
+            padding: 16px;
+            background: var(--ivory);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+
+        .info-section h4 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--charcoal);
+            margin-bottom: 8px;
+        }
+
+        .info-section p {
+            font-size: 13px;
+            color: var(--charcoal-light);
+            line-height: 1.6;
+        }
+
+        /* Hidden sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Delete button on history */
+        .delete-session-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            color: var(--rust);
+            background: transparent;
+            border: 1px solid var(--rust);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .delete-session-btn:hover {
+            background: var(--rust);
+            color: var(--white);
+        }
+
+        /* Action buttons row */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .action-row .btn {
+            flex: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 380px) {
+            .club-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Line Test</h1>
+            <p class="subtitle">Zambri Directional Accuracy Assessment</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="test">Test</button>
+            <button class="nav-tab" data-tab="history">History</button>
+            <button class="nav-tab" data-tab="benchmarks">Benchmarks</button>
+        </nav>
+
+        <!-- Test Section -->
+        <section id="test-section" class="section active">
+            <!-- Setup Section (shown before test starts) -->
+            <div id="setup-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Session Setup</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-section">
+                            <h4>About the Line Test</h4>
+                            <p>The Line Test measures directional accuracy by tracking how many yards each shot misses left or right of the target line. Hit 20 shots (5 per club), and your final score is the sum of the best 18 shots.</p>
+                        </div>
+
+                        <div class="setup-section">
+                            <h3>Select Your 4 Clubs</h3>
+                            <div class="club-grid">
+                                <div class="club-input-group">
+                                    <label>Club 1</label>
+                                    <input type="text" class="club-input" id="club1" value="PW" maxlength="6">
+                                </div>
+                                <div class="club-input-group">
+                                    <label>Club 2</label>
+                                    <input type="text" class="club-input" id="club2" value="9i" maxlength="6">
+                                </div>
+                                <div class="club-input-group">
+                                    <label>Club 3</label>
+                                    <input type="text" class="club-input" id="club3" value="7i" maxlength="6">
+                                </div>
+                                <div class="club-input-group">
+                                    <label>Club 4</label>
+                                    <input type="text" class="club-input" id="club4" value="5i" maxlength="6">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" id="start-test-btn">Begin Line Test</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Test Section (shown during test) -->
+            <div id="active-test-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Shot Entry</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="shot-entry">
+                            <div class="shot-progress">
+                                <div class="shot-count">Shot <span id="shot-number">1</span>/20</div>
+                                <div class="current-club" id="current-club">PW</div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                            </div>
+
+                            <div class="distance-input-container">
+                                <div class="distance-label">Distance off the line</div>
+                                
+                                <div class="direction-buttons">
+                                    <button class="direction-btn active" id="dir-left">← Left</button>
+                                    <button class="direction-btn" id="dir-right">Right →</button>
+                                </div>
+
+                                <div class="distance-input-wrapper">
+                                    <input type="number" class="distance-input" id="distance-input" value="0" min="0" max="99" step="0.5">
+                                    <span class="distance-input-unit">yards</span>
+                                </div>
+
+                                <div class="quick-entry">
+                                    <button class="quick-btn" data-value="0">0</button>
+                                    <button class="quick-btn" data-value="1">1</button>
+                                    <button class="quick-btn" data-value="2">2</button>
+                                    <button class="quick-btn" data-value="3">3</button>
+                                    <button class="quick-btn" data-value="4">4</button>
+                                    <button class="quick-btn" data-value="5">5</button>
+                                    <button class="quick-btn" data-value="6">6</button>
+                                    <button class="quick-btn" data-value="8">8</button>
+                                    <button class="quick-btn" data-value="10">10</button>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary" id="record-shot-btn">Record Shot</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shot History During Test -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Shots Recorded</h2>
+                    </div>
+                    <div class="shot-list" id="shot-list">
+                        <!-- Shots will be added here -->
+                    </div>
+                    <div class="running-total">
+                        <span class="total-label">Running Total (Best 18)</span>
+                        <span class="total-value" id="running-total">0 yds</span>
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <button class="btn btn-outline" id="undo-shot-btn">Undo Last</button>
+                    <button class="btn btn-secondary" id="cancel-test-btn">Cancel Test</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- History Section -->
+        <section id="history-section" class="section">
+            <!-- Performance Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Performance Summary</h2>
+                </div>
+                <div class="card-body">
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="summary-label">Current</div>
+                            <div class="summary-value highlight" id="current-score">—</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Personal Best</div>
+                            <div class="summary-value gold" id="personal-best">—</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Last 5 Avg</div>
+                            <div class="summary-value" id="last-five-avg">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Session History</h2>
+                </div>
+                <div class="card-body" id="history-list">
+                    <!-- History items will be rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Benchmarks Section -->
+        <section id="benchmarks-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Performance Benchmarks</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-section">
+                        <p>Benchmarks based on USC golf program data and elite amateur testing. Lower scores indicate better directional accuracy.</p>
+                    </div>
+                    <div class="benchmark-list" id="benchmark-list">
+                        <!-- Benchmarks will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Session Complete Modal -->
+    <div class="modal-overlay" id="complete-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Test Complete</h3>
+                <button class="modal-close" id="close-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="final-score-display">
+                    <div class="final-score-label">Final Score</div>
+                    <div class="final-score-value" id="final-score">0</div>
+                    <div class="final-score-unit">total yards (best 18 shots)</div>
+                    <div id="pb-badge" style="display: none;">
+                        <div class="pb-indicator">★ New Personal Best!</div>
+                    </div>
+                    <div class="final-benchmark" id="final-benchmark"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="view-details-btn">View Details</button>
+                <button class="btn btn-primary" id="save-session-btn">Save Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Details Modal -->
+    <div class="modal-overlay" id="details-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Session Details</h3>
+                <button class="modal-close" id="close-details-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="details-content">
+                    <!-- Session details will be rendered here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="close-details-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        const state = {
+            currentTest: null,
+            sessions: [],
+            benchmarks: [
+                { level: 'Tour Level', min: 0, max: 36, description: 'PGA/LPGA Tour caliber' },
+                { level: 'Elite Amateur', min: 36, max: 54, description: 'Scratch to +handicap' },
+                { level: 'Low Single Digit', min: 54, max: 72, description: '1-5 handicap range' },
+                { level: 'Single Digit', min: 72, max: 90, description: '6-9 handicap range' },
+                { level: 'Mid Handicap', min: 90, max: 120, description: '10-15 handicap range' },
+                { level: 'Higher Handicap', min: 120, max: 999, description: '16+ handicap' }
+            ]
+        };
+
+        // DOM Elements
+        const elements = {
+            navTabs: document.querySelectorAll('.nav-tab'),
+            testSection: document.getElementById('test-section'),
+            historySection: document.getElementById('history-section'),
+            benchmarksSection: document.getElementById('benchmarks-section'),
+            setupSection: document.getElementById('setup-section'),
+            activeTestSection: document.getElementById('active-test-section'),
+            startTestBtn: document.getElementById('start-test-btn'),
+            recordShotBtn: document.getElementById('record-shot-btn'),
+            undoShotBtn: document.getElementById('undo-shot-btn'),
+            cancelTestBtn: document.getElementById('cancel-test-btn'),
+            shotNumber: document.getElementById('shot-number'),
+            currentClub: document.getElementById('current-club'),
+            progressFill: document.getElementById('progress-fill'),
+            distanceInput: document.getElementById('distance-input'),
+            dirLeft: document.getElementById('dir-left'),
+            dirRight: document.getElementById('dir-right'),
+            shotList: document.getElementById('shot-list'),
+            runningTotal: document.getElementById('running-total'),
+            currentScore: document.getElementById('current-score'),
+            personalBest: document.getElementById('personal-best'),
+            lastFiveAvg: document.getElementById('last-five-avg'),
+            historyList: document.getElementById('history-list'),
+            benchmarkList: document.getElementById('benchmark-list'),
+            completeModal: document.getElementById('complete-modal'),
+            closeModal: document.getElementById('close-modal'),
+            finalScore: document.getElementById('final-score'),
+            pbBadge: document.getElementById('pb-badge'),
+            finalBenchmark: document.getElementById('final-benchmark'),
+            viewDetailsBtn: document.getElementById('view-details-btn'),
+            saveSessionBtn: document.getElementById('save-session-btn'),
+            detailsModal: document.getElementById('details-modal'),
+            closeDetailsModal: document.getElementById('close-details-modal'),
+            closeDetailsBtn: document.getElementById('close-details-btn'),
+            detailsContent: document.getElementById('details-content'),
+            quickBtns: document.querySelectorAll('.quick-btn')
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('lineTestSessions');
+            if (saved) {
+                state.sessions = JSON.parse(saved);
+            }
+            updateSummary();
+            renderHistory();
+            renderBenchmarks();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('lineTestSessions', JSON.stringify(state.sessions));
+        }
+
+        // Calculate best 18 score from shots
+        function calculateBest18(shots) {
+            if (shots.length < 18) return null;
+            const distances = shots.map(s => s.distance).sort((a, b) => a - b);
+            return distances.slice(0, 18).reduce((sum, d) => sum + d, 0);
+        }
+
+        // Find which shots are dropped (worst 2)
+        function findDroppedShots(shots) {
+            if (shots.length < 20) return [];
+            const sorted = shots.map((s, i) => ({ index: i, distance: s.distance }))
+                                .sort((a, b) => b.distance - a.distance);
+            return [sorted[0].index, sorted[1].index];
+        }
+
+        // Get benchmark level for a score
+        function getBenchmarkLevel(score) {
+            for (const b of state.benchmarks) {
+                if (score >= b.min && score < b.max) {
+                    return b;
+                }
+            }
+            return state.benchmarks[state.benchmarks.length - 1];
+        }
+
+        // Update summary display
+        function updateSummary() {
+            // Current Score (only during active test)
+            if (state.currentTest && state.currentTest.shots.length >= 18) {
+                const score = calculateBest18(state.currentTest.shots);
+                elements.currentScore.innerHTML = `${score.toFixed(1)}<span class="summary-unit">yds</span>`;
+            } else if (state.currentTest && state.currentTest.shots.length > 0) {
+                const total = state.currentTest.shots.reduce((sum, s) => sum + s.distance, 0);
+                elements.currentScore.innerHTML = `${total.toFixed(1)}<span class="summary-unit">*</span>`;
+            } else {
+                elements.currentScore.textContent = '—';
+            }
+
+            // Personal Best
+            if (state.sessions.length > 0) {
+                const pb = Math.min(...state.sessions.map(s => s.score));
+                elements.personalBest.innerHTML = `${pb.toFixed(1)}<span class="summary-unit">yds</span>`;
+            } else {
+                elements.personalBest.textContent = '—';
+            }
+
+            // Last 5 Average
+            if (state.sessions.length > 0) {
+                const recent = state.sessions.slice(-5);
+                const avg = recent.reduce((sum, s) => sum + s.score, 0) / recent.length;
+                elements.lastFiveAvg.innerHTML = `${avg.toFixed(1)}<span class="summary-unit">yds</span>`;
+            } else {
+                elements.lastFiveAvg.textContent = '—';
+            }
+        }
+
+        // Render shot list
+        function renderShotList() {
+            if (!state.currentTest) return;
+            
+            const dropped = state.currentTest.shots.length >= 20 
+                ? findDroppedShots(state.currentTest.shots) 
+                : [];
+
+            elements.shotList.innerHTML = state.currentTest.shots.map((shot, i) => {
+                const isDropped = dropped.includes(i);
+                return `
+                    <div class="shot-item ${isDropped ? 'dropped' : ''}">
+                        <div class="shot-info">
+                            <span class="shot-number">${i + 1}</span>
+                            <span class="shot-club">${shot.club}</span>
+                        </div>
+                        <div>
+                            <span class="shot-distance">${shot.distance.toFixed(1)} yds</span>
+                            <span class="shot-direction">${shot.direction}</span>
+                            ${isDropped ? '<span class="dropped-badge">Dropped</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).reverse().join('');
+
+            // Update running total
+            if (state.currentTest.shots.length >= 18) {
+                const total = calculateBest18(state.currentTest.shots);
+                elements.runningTotal.textContent = `${total.toFixed(1)} yds`;
+            } else {
+                const total = state.currentTest.shots.reduce((sum, s) => sum + s.distance, 0);
+                elements.runningTotal.textContent = `${total.toFixed(1)} yds`;
+            }
+
+            updateSummary();
+        }
+
+        // Render history list
+        function renderHistory() {
+            if (state.sessions.length === 0) {
+                elements.historyList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No sessions recorded yet.<br>Complete a Line Test to see your history.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const pb = Math.min(...state.sessions.map(s => s.score));
+
+            elements.historyList.innerHTML = state.sessions.slice().reverse().map((session, i) => {
+                const isPB = session.score === pb;
+                return `
+                    <div class="history-item" data-index="${state.sessions.length - 1 - i}">
+                        <div class="history-header">
+                            <span class="history-date">${new Date(session.date).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</span>
+                            <span class="history-score">
+                                ${session.score.toFixed(1)} <span>yds</span>
+                                ${isPB ? '<span class="history-pb">PB</span>' : ''}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="history-clubs">Clubs: ${session.clubs.join(', ')}</span>
+                            <button class="delete-session-btn" data-delete="${state.sessions.length - 1 - i}">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-session-btn')) {
+                        e.stopPropagation();
+                        const index = parseInt(e.target.dataset.delete);
+                        if (confirm('Delete this session?')) {
+                            state.sessions.splice(index, 1);
+                            saveData();
+                            renderHistory();
+                            updateSummary();
+                            renderBenchmarks();
+                        }
+                    } else {
+                        const index = parseInt(item.dataset.index);
+                        showSessionDetails(state.sessions[index]);
+                    }
+                });
+            });
+        }
+
+        // Render benchmarks
+        function renderBenchmarks() {
+            const currentPB = state.sessions.length > 0 
+                ? Math.min(...state.sessions.map(s => s.score)) 
+                : null;
+
+            const currentLevel = currentPB !== null ? getBenchmarkLevel(currentPB) : null;
+
+            elements.benchmarkList.innerHTML = state.benchmarks.map(b => {
+                const isCurrent = currentLevel && b.level === currentLevel.level;
+                const rangeText = b.max === 999 ? `${b.min}+` : `${b.min}–${b.max}`;
+                return `
+                    <div class="benchmark-item ${isCurrent ? 'current' : ''}">
+                        <div>
+                            <div class="benchmark-level">${b.level}</div>
+                            <div style="font-size: 12px; color: var(--charcoal-light);">${b.description}</div>
+                        </div>
+                        <div class="benchmark-range">${rangeText} yds</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show session details modal
+        function showSessionDetails(session) {
+            const dropped = findDroppedShots(session.shots);
+            
+            elements.detailsContent.innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <div class="final-score-label">Final Score</div>
+                    <div class="final-score-value" style="font-size: 40px;">${session.score.toFixed(1)}</div>
+                    <div class="final-score-unit">total yards</div>
+                </div>
+                <div style="margin-bottom: 16px; font-size: 13px; color: var(--charcoal-light);">
+                    ${new Date(session.date).toLocaleDateString('en-US', { 
+                        weekday: 'long',
+                        month: 'long', 
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
+                </div>
+                <div class="shot-list" style="max-height: 300px;">
+                    ${session.shots.map((shot, i) => {
+                        const isDropped = dropped.includes(i);
+                        return `
+                            <div class="shot-item ${isDropped ? 'dropped' : ''}">
+                                <div class="shot-info">
+                                    <span class="shot-number">${i + 1}</span>
+                                    <span class="shot-club">${shot.club}</span>
+                                </div>
+                                <div>
+                                    <span class="shot-distance">${shot.distance.toFixed(1)} yds</span>
+                                    <span class="shot-direction">${shot.direction}</span>
+                                    ${isDropped ? '<span class="dropped-badge">Dropped</span>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            elements.detailsModal.classList.add('active');
+        }
+
+        // Navigation
+        elements.navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                elements.navTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const section = tab.dataset.tab;
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`${section}-section`).classList.add('active');
+            });
+        });
+
+        // Start Test
+        elements.startTestBtn.addEventListener('click', () => {
+            const clubs = [
+                document.getElementById('club1').value.trim() || 'PW',
+                document.getElementById('club2').value.trim() || '9i',
+                document.getElementById('club3').value.trim() || '7i',
+                document.getElementById('club4').value.trim() || '5i'
+            ];
+
+            state.currentTest = {
+                clubs: clubs,
+                shots: [],
+                currentShot: 0,
+                startTime: new Date().toISOString()
+            };
+
+            elements.setupSection.style.display = 'none';
+            elements.activeTestSection.style.display = 'block';
+            updateTestUI();
+        });
+
+        // Direction buttons
+        elements.dirLeft.addEventListener('click', () => {
+            elements.dirLeft.classList.add('active');
+            elements.dirRight.classList.remove('active');
+        });
+
+        elements.dirRight.addEventListener('click', () => {
+            elements.dirRight.classList.add('active');
+            elements.dirLeft.classList.remove('active');
+        });
+
+        // Quick entry buttons
+        elements.quickBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                elements.distanceInput.value = btn.dataset.value;
+            });
+        });
+
+        // Record Shot
+        elements.recordShotBtn.addEventListener('click', () => {
+            if (!state.currentTest || state.currentTest.shots.length >= 20) return;
+
+            const distance = parseFloat(elements.distanceInput.value) || 0;
+            const direction = elements.dirLeft.classList.contains('active') ? 'L' : 'R';
+            const clubIndex = state.currentTest.shots.length % 4;
+            const club = state.currentTest.clubs[clubIndex];
+
+            state.currentTest.shots.push({
+                distance: distance,
+                direction: direction,
+                club: club
+            });
+
+            elements.distanceInput.value = '0';
+            renderShotList();
+
+            if (state.currentTest.shots.length >= 20) {
+                completeTest();
+            } else {
+                updateTestUI();
+            }
+        });
+
+        // Undo Shot
+        elements.undoShotBtn.addEventListener('click', () => {
+            if (!state.currentTest || state.currentTest.shots.length === 0) return;
+            state.currentTest.shots.pop();
+            renderShotList();
+            updateTestUI();
+        });
+
+        // Cancel Test
+        elements.cancelTestBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to cancel this test? All shots will be lost.')) {
+                state.currentTest = null;
+                elements.activeTestSection.style.display = 'none';
+                elements.setupSection.style.display = 'block';
+                elements.shotList.innerHTML = '';
+                elements.runningTotal.textContent = '0 yds';
+                updateSummary();
+            }
+        });
+
+        // Update test UI
+        function updateTestUI() {
+            if (!state.currentTest) return;
+
+            const shotNum = state.currentTest.shots.length + 1;
+            elements.shotNumber.textContent = Math.min(shotNum, 20);
+            elements.progressFill.style.width = `${(state.currentTest.shots.length / 20) * 100}%`;
+
+            const clubIndex = state.currentTest.shots.length % 4;
+            elements.currentClub.textContent = state.currentTest.clubs[clubIndex];
+        }
+
+        // Complete Test
+        function completeTest() {
+            const score = calculateBest18(state.currentTest.shots);
+            const pb = state.sessions.length > 0 
+                ? Math.min(...state.sessions.map(s => s.score)) 
+                : Infinity;
+            const isPB = score < pb;
+            const benchmark = getBenchmarkLevel(score);
+
+            elements.finalScore.textContent = score.toFixed(1);
+            elements.pbBadge.style.display = isPB ? 'block' : 'none';
+            elements.finalBenchmark.textContent = `${benchmark.level} – ${benchmark.description}`;
+            elements.completeModal.classList.add('active');
+        }
+
+        // Close modals
+        elements.closeModal.addEventListener('click', () => {
+            elements.completeModal.classList.remove('active');
+        });
+
+        elements.closeDetailsModal.addEventListener('click', () => {
+            elements.detailsModal.classList.remove('active');
+        });
+
+        elements.closeDetailsBtn.addEventListener('click', () => {
+            elements.detailsModal.classList.remove('active');
+        });
+
+        // View details from complete modal
+        elements.viewDetailsBtn.addEventListener('click', () => {
+            const session = {
+                date: new Date().toISOString(),
+                score: calculateBest18(state.currentTest.shots),
+                clubs: state.currentTest.clubs,
+                shots: [...state.currentTest.shots]
+            };
+            elements.completeModal.classList.remove('active');
+            showSessionDetails(session);
+        });
+
+        // Save Session
+        elements.saveSessionBtn.addEventListener('click', () => {
+            const session = {
+                date: new Date().toISOString(),
+                score: calculateBest18(state.currentTest.shots),
+                clubs: state.currentTest.clubs,
+                shots: [...state.currentTest.shots]
+            };
+
+            state.sessions.push(session);
+            saveData();
+
+            state.currentTest = null;
+            elements.completeModal.classList.remove('active');
+            elements.activeTestSection.style.display = 'none';
+            elements.setupSection.style.display = 'block';
+            elements.shotList.innerHTML = '';
+            elements.runningTotal.textContent = '0 yds';
+
+            updateSummary();
+            renderHistory();
+            renderBenchmarks();
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
