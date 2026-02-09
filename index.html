@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlayerPath - Practice Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f4f0;
+      -webkit-font-smoothing: antialiased;
+      color: #2c3333;
+      line-height: 1.6;
+    }
+    #root { min-height: 100vh; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 20px;
+    }
+
+    .title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 44px;
+      font-weight: 600;
+      color: #2d5016;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: #5a6666;
+      margin: 0;
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .skill-section {
+      background: #fafaf8;
+      border-radius: 2px;
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .skill-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .skill-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(45, 80, 22, 0.1);
+      border-radius: 2px;
+    }
+
+    .skill-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: #2d5016;
+    }
+
+    .skill-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: #2c3333;
+      letter-spacing: -0.3px;
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    @media (max-width: 700px) {
+      .columns { grid-template-columns: 1fr; }
+    }
+
+    .category {
+      min-height: 120px;
+    }
+
+    .category-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0 0 14px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .category-title.dev {
+      color: #2d5016;
+    }
+
+    .category-title.assess {
+      color: #b8956a;
+    }
+
+    .category-title .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dev .dot { background: #2d5016; }
+    .assess .dot { background: #b8956a; }
+
+    .practice-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .practice-item {
+      display: block;
+      padding: 14px 16px;
+      background: #f5f4f0;
+      border-radius: 2px;
+      text-decoration: none;
+      color: #2c3333;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 200ms ease;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .practice-item:hover {
+      background: #2d5016;
+      color: #fafaf8;
+      transform: translateX(4px);
+    }
+
+    .coming-soon {
+      padding: 14px 16px;
+      background: #f5f4f0;
+      border-radius: 2px;
+      color: #888;
+      font-size: 14px;
+      font-style: italic;
+      border: 1px dashed rgba(0,0,0,0.12);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: #5a6666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="container">
+      <header class="header">
+        <div class="logo">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#2d5016" stroke-width="1.5"/>
+            <circle cx="50" cy="50" r="32" fill="none" stroke="#2d5016" stroke-width="1.2"/>
+            <circle cx="50" cy="50" r="19" fill="none" stroke="#2d5016" stroke-width="1"/>
+            <circle cx="50" cy="50" r="5" fill="#2d5016"/>
+          </svg>
+        </div>
+        <h1 class="title">PlayerPath</h1>
+        <p class="subtitle">Practice Hub</p>
+      </header>
+
+      <div class="skills-grid">
+        <!-- PUTTING -->
+        <section class="skill-section">
+          <div class="skill-header">
+            <div class="skill-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <h2 class="skill-title">Putting</h2>
+          </div>
+          <div class="columns">
+            <div class="category dev">
+              <h3 class="category-title dev"><span class="dot"></span>Skill Development</h3>
+              <ul class="practice-list">
+                <li><a href="Putting/Speed%20Ratio/speed-control-practice.html" class="practice-item">Speed Ratio</a></li>
+              </ul>
+            </div>
+            <div class="category assess">
+              <h3 class="category-title assess"><span class="dot"></span>Skill Assessment</h3>
+              <ul class="practice-list">
+                <li><a href="Putting/Stack%20Putting/stack-putting.html" class="practice-item">Stack Putting</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- DISTANCE WEDGES -->
+        <section class="skill-section">
+          <div class="skill-header">
+            <div class="skill-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M3 21h18"/>
+                <path d="M5 21V7l8-4v4l6 3"/>
+                <circle cx="17" cy="10" r="3"/>
+              </svg>
+            </div>
+            <h2 class="skill-title">Distance Wedges</h2>
+          </div>
+          <div class="columns">
+            <div class="category dev">
+              <h3 class="category-title dev"><span class="dot"></span>Skill Development</h3>
+              <ul class="practice-list">
+                <li><a href="Distance%20Wedges/Spin%20Loft/index.html" class="practice-item">Spin Loft</a></li>
+                <li><a href="Distance%20Wedges/Wedge%20Club%20Speed/index.html" class="practice-item">Club Speed</a></li>
+              </ul>
+            </div>
+            <div class="category assess">
+              <h3 class="category-title assess"><span class="dot"></span>Skill Assessment</h3>
+              <ul class="practice-list">
+                <li><a href="Distance%20Wedges/Stack%20Wedge/index.html" class="practice-item">Stack Wedge</a></li>
+                <li><a href="Distance%20Wedges/Stack%20Wedge/wedge-master.html" class="practice-item">Stack Wedge (Master)</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- APPROACH -->
+        <section class="skill-section">
+          <div class="skill-header">
+            <div class="skill-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+              </svg>
+            </div>
+            <h2 class="skill-title">Approach</h2>
+          </div>
+          <div class="columns">
+            <div class="category dev">
+              <h3 class="category-title dev"><span class="dot"></span>Skill Development</h3>
+              <div class="coming-soon">Coming Soon</div>
+            </div>
+            <div class="category assess">
+              <h3 class="category-title assess"><span class="dot"></span>Skill Assessment</h3>
+              <ul class="practice-list">
+                <li><a href="Approach/Line%20Test/line-test.html" class="practice-item">Line Test</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- DRIVING -->
+        <section class="skill-section">
+          <div class="skill-header">
+            <div class="skill-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <ellipse cx="12" cy="8" rx="8" ry="5"/>
+                <path d="M4 8v3a2 2 0 002 2h14a2 2 0 002-2V8"/>
+                <circle cx="12" cy="14" r="2"/>
+              </svg>
+            </div>
+            <h2 class="skill-title">Driving</h2>
+          </div>
+          <div class="columns">
+            <div class="category dev">
+              <h3 class="category-title dev"><span class="dot"></span>Skill Development</h3>
+              <div class="coming-soon">Coming Soon</div>
+            </div>
+            <div class="category assess">
+              <h3 class="category-title assess"><span class="dot"></span>Skill Assessment</h3>
+              <div class="coming-soon">Coming Soon</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer">
+        <p class="footer-text">PlayerPath Practice Hub</p>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>
