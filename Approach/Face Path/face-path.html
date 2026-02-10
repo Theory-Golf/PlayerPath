@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Face Path Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ivory: #fafaf8;
+            --cream: #f5f4f0;
+            --charcoal: #2c3333;
+            --forest: #2d5016;
+            --forest-light: #3d6b22;
+            --gold: #b8956a;
+            --gold-dark: #9a7a55;
+            --sand: #d4c5b0;
+            --rust: #8b5a3c;
+            --text-primary: #2c3333;
+            --text-secondary: #6b7280;
+            --border-light: #e8e6e1;
+            --shadow-sm: rgba(44, 51, 51, 0.06);
+            --shadow-md: rgba(44, 51, 51, 0.1);
+            --success: #2d5016;
+            --warning: #b8956a;
+            --danger: #8b5a3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ivory);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 100px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 24px 0 32px;
+        }
+
+        .header h1 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--charcoal);
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 2px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 14px 16px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 250ms ease;
+            position: relative;
+        }
+
+        .nav-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: var(--forest);
+            transition: width 250ms ease;
+        }
+
+        .nav-tab.active {
+            color: var(--forest);
+        }
+
+        .nav-tab.active::after {
+            width: 60%;
+        }
+
+        .nav-tab:hover:not(.active) {
+            color: var(--charcoal);
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 2px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Skill Level Selector */
+        .level-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .level-btn {
+            background: white;
+            border: 1.5px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 12px 8px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 250ms ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .level-btn:hover {
+            border-color: var(--forest);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px var(--shadow-md);
+        }
+
+        .level-btn.active {
+            border-color: var(--forest);
+            background: linear-gradient(to bottom, #fafaf8, #f8f7f4);
+            box-shadow: 0 2px 8px var(--shadow-md);
+        }
+
+        .level-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background: var(--forest);
+        }
+
+        .level-btn .level-number {
+            display: block;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--charcoal);
+        }
+
+        .level-btn .level-name {
+            display: block;
+            font-size: 9px;
+            color: var(--forest);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .level-btn .threshold {
+            display: block;
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Threshold Info */
+        .threshold-info {
+            background: var(--cream);
+            padding: 12px 16px;
+            border-radius: 2px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-light);
+        }
+
+        .threshold-info h4 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--charcoal);
+            margin-bottom: 8px;
+        }
+
+        .threshold-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .threshold-item {
+            text-align: center;
+            padding: 8px 4px;
+            background: white;
+            border-radius: 2px;
+            border: 1px solid var(--border-light);
+        }
+
+        .threshold-item .label {
+            color: var(--text-secondary);
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .threshold-item .value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--forest);
+        }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--cream);
+            border: 1px solid var(--border-light);
+            border-radius: 2px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600;
+            transition: all 200ms ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--forest);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.08);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Calculation Display */
+        .calc-display {
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.06) 0%, rgba(45, 80, 22, 0.02) 100%);
+            border: 1px solid rgba(45, 80, 22, 0.15);
+            border-radius: 2px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .calc-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .calc-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 42px;
+            font-weight: 600;
+            color: var(--forest);
+            line-height: 1;
+        }
+
+        .calc-formula {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .calc-formula span {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 24px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 2px;
+            border: none;
+            cursor: pointer;
+            transition: all 250ms ease;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--forest);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--forest-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
+        }
+
+        .btn-primary:disabled {
+            background: var(--border-light);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--charcoal);
+            border: 1.5px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--cream);
+            border-color: var(--charcoal);
+        }
+
+        .btn-danger {
+            background: var(--rust);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #7a4a2c;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 16px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .progress-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--forest);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border-light);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--forest) 0%, var(--forest-light) 100%);
+            border-radius: 3px;
+            transition: width 300ms ease;
+        }
+
+        /* Shot List */
+        .shot-list {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .shot-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 1fr 70px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--cream);
+            border-radius: 2px;
+            margin-bottom: 8px;
+            border-left: 3px solid transparent;
+            transition: all 200ms ease;
+        }
+
+        .shot-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .shot-item.in-range {
+            border-left-color: var(--forest);
+            background: linear-gradient(90deg, rgba(45, 80, 22, 0.06) 0%, var(--cream) 100%);
+        }
+
+        .shot-item.out-range {
+            border-left-color: var(--rust);
+        }
+
+        .shot-number {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .shot-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .shot-metric {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .shot-metric strong {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .shot-f2p {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--forest);
+            text-align: right;
+        }
+
+        .shot-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        .shot-badge.success {
+            background: rgba(45, 80, 22, 0.1);
+            color: var(--forest);
+        }
+
+        .shot-badge.missed {
+            background: rgba(139, 90, 60, 0.1);
+            color: var(--rust);
+        }
+
+        /* Session Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 16px 8px;
+            background: var(--cream);
+            border-radius: 2px;
+            border: 1px solid var(--border-light);
+        }
+
+        .summary-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .summary-value.highlight {
+            color: var(--forest);
+        }
+
+        /* Compliance Cards */
+        .compliance-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .compliance-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--cream);
+            border-radius: 2px;
+            border: 1px solid var(--border-light);
+        }
+
+        .compliance-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .compliance-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .compliance-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .compliance-value.success {
+            color: var(--forest);
+        }
+
+        .compliance-value.warning {
+            color: var(--gold-dark);
+        }
+
+        .compliance-value.danger {
+            color: var(--rust);
+        }
+
+        .compliance-bar {
+            width: 80px;
+            height: 6px;
+            background: var(--border-light);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .compliance-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 300ms ease;
+        }
+
+        .compliance-fill.success {
+            background: var(--forest);
+        }
+
+        .compliance-fill.warning {
+            background: var(--gold);
+        }
+
+        .compliance-fill.danger {
+            background: var(--rust);
+        }
+
+        /* Distribution Visualization */
+        .distribution-viz {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--cream);
+            border-radius: 2px;
+            border: 1px solid var(--border-light);
+        }
+
+        .distribution-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .distribution-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .distribution-label {
+            width: 100px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .distribution-bar-container {
+            flex: 1;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+
+        .distribution-bar {
+            height: 100%;
+            transition: width 300ms ease;
+        }
+
+        .distribution-bar.face-angle {
+            background: linear-gradient(90deg, var(--forest) 0%, var(--forest-light) 100%);
+        }
+
+        .distribution-bar.club-path {
+            background: linear-gradient(90deg, var(--gold) 0%, var(--gold-dark) 100%);
+        }
+
+        .distribution-bar.face-to-path {
+            background: linear-gradient(90deg, var(--forest) 0%, var(--gold) 100%);
+        }
+
+        /* Assessment */
+        .assessment {
+            padding: 16px;
+            border-radius: 2px;
+            margin-top: 16px;
+            border-left: 3px solid;
+        }
+
+        .assessment.passed {
+            background: rgba(45, 80, 22, 0.04);
+            border-color: var(--forest);
+        }
+
+        .assessment.conditional {
+            background: rgba(184, 149, 106, 0.08);
+            border-color: var(--gold-dark);
+        }
+
+        .assessment.failed {
+            background: rgba(139, 90, 60, 0.04);
+            border-color: var(--rust);
+        }
+
+        .assessment h4 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .assessment.passed h4 {
+            color: var(--forest);
+        }
+
+        .assessment.conditional h4 {
+            color: var(--gold-dark);
+        }
+
+        .assessment.failed h4 {
+            color: var(--rust);
+        }
+
+        .assessment p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* History */
+        .history-item {
+            padding: 16px;
+            background: var(--cream);
+            border-radius: 2px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 200ms ease;
+            border: 1px solid var(--border-light);
+        }
+
+        .history-item:hover {
+            background: white;
+            box-shadow: 0 2px 8px var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .history-date {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .history-score {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--forest);
+        }
+
+        .history-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .history-detail {
+            text-align: center;
+            padding: 6px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .history-detail strong {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        /* Benchmarks */
+        .benchmark-card {
+            background: var(--cream);
+            border-radius: 2px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .benchmark-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .benchmark-level {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--forest);
+        }
+
+        .benchmark-status {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 8px;
+            border-radius: 2px;
+        }
+
+        .benchmark-status.qualified {
+            background: rgba(45, 80, 22, 0.1);
+            color: var(--forest);
+        }
+
+        .benchmark-status.unqualified {
+            background: rgba(139, 90, 60, 0.1);
+            color: var(--rust);
+        }
+
+        .benchmark-table {
+            display: grid;
+            grid-template-columns: 1fr 70px 70px;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .benchmark-row {
+            display: contents;
+        }
+
+        .benchmark-metric {
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .benchmark-you, .benchmark-target {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .benchmark-you {
+            color: var(--forest);
+        }
+
+        .benchmark-target {
+            color: var(--text-secondary);
+        }
+
+        .benchmark-row.header {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        /* Filters */
+        .filter-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 12px;
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 2px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--forest);
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Action Row */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .action-row .btn {
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 380px) {
+            .level-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .threshold-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Face Path Tracker</h1>
+            <p class="subtitle">Direction Control Analysis</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="test">Test</button>
+            <button class="nav-tab" data-tab="history">History</button>
+            <button class="nav-tab" data-tab="benchmarks">Benchmarks</button>
+        </nav>
+
+        <!-- Test Section -->
+        <section id="test-section" class="section active">
+            <!-- Skill Level Selection -->
+            <div class="card" id="level-card">
+                <div class="card-header">
+                    <h2>Skill Level</h2>
+                </div>
+                <div class="card-body">
+                    <div class="level-selector" id="levelSelector"></div>
+                    <div class="threshold-info">
+                        <h4>80% Threshold (±)</h4>
+                        <div class="threshold-grid">
+                            <div class="threshold-item">
+                                <div class="label">Face Angle</div>
+                                <div class="value" id="threshold-fa">±8°</div>
+                            </div>
+                            <div class="threshold-item">
+                                <div class="label">Club Path</div>
+                                <div class="value" id="threshold-cp">±6°</div>
+                            </div>
+                            <div class="threshold-item">
+                                <div class="label">Face to Path</div>
+                                <div class="value" id="threshold-f2p">±5°</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shot Entry -->
+            <div class="card" id="entry-card">
+                <div class="card-header">
+                    <h2>Shot Entry</h2>
+                </div>
+                <div class="card-body">
+                    <div class="progress-container">
+                        <div class="progress-header">
+                            <span class="progress-label">Shot <span id="shot-number">1</span> of 10</span>
+                            <span class="progress-value" id="compliance-rate">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Face Angle (°)</label>
+                            <input type="number" id="face-angle" step="0.1" placeholder="-2.5">
+                        </div>
+                        <div class="input-group">
+                            <label>Club Path (°)</label>
+                            <input type="number" id="club-path" step="0.1" placeholder="+1.2">
+                        </div>
+                    </div>
+
+                    <div class="calc-display">
+                        <div class="calc-label">Face to Path</div>
+                        <div class="calc-value" id="face-to-path">0.0°</div>
+                        <div class="calc-formula">Face Angle − Club Path = <span id="calc-formula">0.0°</span></div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="undoShot()">Undo</button>
+                        <button class="btn btn-primary" id="record-btn" onclick="recordShot()">Record Shot</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shots Recorded -->
+            <div class="card" id="shots-card" style="display: none;">
+                <div class="card-header">
+                    <h2>Shots Recorded</h2>
+                </div>
+                <div class="card-body">
+                    <div class="shot-list" id="shot-list"></div>
+                    <div class="action-row">
+                        <button class="btn btn-secondary" onclick="newSession()">New Session</button>
+                        <button class="btn btn-primary" id="complete-btn" onclick="completeSession()">Complete Session</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Summary -->
+            <div class="card" id="summary-card" style="display: none;">
+                <div class="card-header">
+                    <h2>Session Complete</h2>
+                </div>
+                <div class="card-body">
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="summary-label">Avg Face Angle</div>
+                            <div class="summary-value" id="avg-fa">0.0°</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Avg Club Path</div>
+                            <div class="summary-value" id="avg-cp">0.0°</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Avg F2P</div>
+                            <div class="summary-value highlight" id="avg-f2p">0.0°</div>
+                        </div>
+                    </div>
+
+                    <h4 style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 14px; margin-bottom: 12px; color: var(--charcoal);">80% Threshold Compliance</h4>
+                    <div class="compliance-grid" id="compliance-grid"></div>
+
+                    <div class="distribution-viz">
+                        <div class="distribution-title">Session Shot Distribution</div>
+                        <div class="distribution-row">
+                            <span class="distribution-label">Face Angle</span>
+                            <div class="distribution-bar-container">
+                                <div class="distribution-bar face-angle" id="dist-fa" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="distribution-row">
+                            <span class="distribution-label">Club Path</span>
+                            <div class="distribution-bar-container">
+                                <div class="distribution-bar club-path" id="dist-cp" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="distribution-row">
+                            <span class="distribution-label">Face to Path</span>
+                            <div class="distribution-bar-container">
+                                <div class="distribution-bar face-to-path" id="dist-f2p" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="assessment"></div>
+
+                    <div class="action-row">
+                        <button class="btn btn-secondary" onclick="viewHistory()">View History</button>
+                        <button class="btn btn-primary" onclick="newSession()">New Session</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- History Section -->
+        <section id="history-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Session History</h2>
+                </div>
+                <div class="card-body">
+                    <div class="filter-section">
+                        <select class="filter-select" id="filter-level" onchange="filterHistory()">
+                            <option value="all">All Levels</option>
+                            <option value="1">Level 1 - Foundation</option>
+                            <option value="2">Level 2 - Developing</option>
+                            <option value="3">Level 3 - Competent</option>
+                            <option value="4">Level 4 - Advanced</option>
+                            <option value="5">Level 5 - Expert</option>
+                            <option value="6">Level 6 - Tour Pro</option>
+                        </select>
+                        <select class="filter-select" id="filter-sort" onchange="sortHistory()">
+                            <option value="date-desc">Newest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="compliance-desc">Best Compliance</option>
+                        </select>
+                    </div>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benchmarks Section -->
+        <section id="benchmarks-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Performance Benchmarks</h2>
+                </div>
+                <div class="card-body">
+                    <div id="current-level-info"></div>
+                    <div id="benchmark-list"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Skill Levels Configuration
+        const SKILL_LEVELS = [
+            { level: 1, name: 'Foundation', faceAngle: 8, clubPath: 6, faceToPath: 5 },
+            { level: 2, name: 'Developing', faceAngle: 6, clubPath: 5, faceToPath: 4 },
+            { level: 3, name: 'Competent', faceAngle: 5, clubPath: 4, faceToPath: 3 },
+            { level: 4, name: 'Advanced', faceAngle: 4, clubPath: 3, faceToPath: 2.5 },
+            { level: 5, name: 'Expert', faceAngle: 3, clubPath: 2.5, faceToPath: 2 },
+            { level: 6, name: 'Tour Pro', faceAngle: 2, clubPath: 2, faceToPath: 1.5 }
+        ];
+
+        // Application State
+        let state = {
+            currentLevel: 1,
+            shots: [],
+            history: []
+        };
+
+        // DOM Elements
+        const elements = {
+            navTabs: document.querySelectorAll('.nav-tab'),
+            sections: document.querySelectorAll('.section'),
+            levelSelector: document.getElementById('levelSelector'),
+            thresholdFA: document.getElementById('threshold-fa'),
+            thresholdCP: document.getElementById('threshold-cp'),
+            thresholdF2P: document.getElementById('threshold-f2p'),
+            faceAngle: document.getElementById('face-angle'),
+            clubPath: document.getElementById('club-path'),
+            faceToPath: document.getElementById('face-to-path'),
+            calcFormula: document.getElementById('calc-formula'),
+            shotNumber: document.getElementById('shot-number'),
+            progressFill: document.getElementById('progress-fill'),
+            complianceRate: document.getElementById('compliance-rate'),
+            recordBtn: document.getElementById('record-btn'),
+            shotsCard: document.getElementById('shots-card'),
+            shotList: document.getElementById('shot-list'),
+            summaryCard: document.getElementById('summary-card'),
+            historyList: document.getElementById('history-list'),
+            benchmarkList: document.getElementById('benchmark-list'),
+            currentLevelInfo: document.getElementById('current-level-info'),
+            filterLevel: document.getElementById('filter-level'),
+            filterSort: document.getElementById('filter-sort')
+        };
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+            renderLevelSelector();
+            updateThresholds();
+            setupNavigation();
+            setupInputListeners();
+            renderHistory();
+            renderBenchmarks();
+        });
+
+        // Load history from localStorage
+        function loadHistory() {
+            const saved = localStorage.getItem('facePathHistory');
+            if (saved) {
+                state.history = JSON.parse(saved);
+            }
+        }
+
+        // Save history to localStorage
+        function saveHistory() {
+            localStorage.setItem('facePathHistory', JSON.stringify(state.history));
+        }
+
+        // Render skill level selector
+        function renderLevelSelector() {
+            elements.levelSelector.innerHTML = SKILL_LEVELS.map(level => `
+                <button class="level-btn ${state.currentLevel === level.level ? 'active' : ''}" 
+                        onclick="selectLevel(${level.level})">
+                    <span class="level-number">L${level.level}</span>
+                    <span class="level-name">${level.name}</span>
+                    <span class="threshold">±${level.faceAngle}°</span>
+                </button>
+            `).join('');
+        }
+
+        // Select skill level
+        function selectLevel(level) {
+            state.currentLevel = level;
+            renderLevelSelector();
+            updateThresholds();
+        }
+
+        // Update threshold display
+        function updateThresholds() {
+            const level = SKILL_LEVELS[state.currentLevel - 1];
+            elements.thresholdFA.textContent = `±${level.faceAngle}°`;
+            elements.thresholdCP.textContent = `±${level.clubPath}°`;
+            elements.thresholdF2P.textContent = `±${level.faceToPath}°`;
+        }
+
+        // Setup navigation tabs
+        function setupNavigation() {
+            elements.navTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    elements.navTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const section = tab.dataset.tab;
+                    elements.sections.forEach(s => s.classList.remove('active'));
+                    document.getElementById(`${section}-section`).classList.add('active');
+                });
+            });
+        }
+
+        // Setup input listeners for real-time calculation
+        function setupInputListeners() {
+            elements.faceAngle.addEventListener('input', calculateFaceToPath);
+            elements.clubPath.addEventListener('input', calculateFaceToPath);
+        }
+
+        // Calculate Face to Path
+        function calculateFaceToPath() {
+            const faceAngle = parseFloat(elements.faceAngle.value) || 0;
+            const clubPath = parseFloat(elements.clubPath.value) || 0;
+            const f2p = faceAngle - clubPath;
+            
+            elements.faceToPath.textContent = `${f2p >= 0 ? '+' : ''}${f2p.toFixed(1)}°`;
+            elements.calcFormula.textContent = `${faceAngle >= 0 ? '+' : ''}${faceAngle.toFixed(1)}° − ${clubPath >= 0 ? '+' : ''}${clubPath.toFixed(1)}° = ${f2p >= 0 ? '+' : ''}${f2p.toFixed(1)}°`;
+        }
+
+        // Record a shot
+        function recordShot() {
+            const faceAngle = parseFloat(elements.faceAngle.value);
+            const clubPath = parseFloat(elements.clubPath.value);
+
+            if (isNaN(faceAngle) || isNaN(clubPath)) {
+                alert('Please enter both Face Angle and Club Path values');
+                return;
+            }
+
+            const faceToPath = faceAngle - clubPath;
+            const level = SKILL_LEVELS[state.currentLevel - 1];
+
+            const shot = {
+                faceAngle: faceAngle,
+                clubPath: clubPath,
+                faceToPath: faceToPath,
+                faceAngleInRange: Math.abs(faceAngle) <= level.faceAngle,
+                clubPathInRange: Math.abs(clubPath) <= level.clubPath,
+                faceToPathInRange: Math.abs(faceToPath) <= level.faceToPath
+            };
+
+            state.shots.push(shot);
+
+            // Clear inputs
+            elements.faceAngle.value = '';
+            elements.clubPath.value = '';
+            calculateFaceToPath();
+
+            // Update UI
+            updateProgress();
+            renderShotList();
+
+            // Check if session is complete
+            if (state.shots.length >= 10) {
+                completeSession();
+            }
+        }
+
+        // Undo last shot
+        function undoShot() {
+            if (state.shots.length > 0) {
+                state.shots.pop();
+                updateProgress();
+                renderShotList();
+            }
+        }
+
+        // Update progress display
+        function updateProgress() {
+            const shotNum = Math.min(state.shots.length + 1, 10);
+            elements.shotNumber.textContent = shotNum;
+            elements.progressFill.style.width = `${(state.shots.length / 10) * 100}%`;
+
+            // Calculate compliance rate
+            if (state.shots.length > 0) {
+                const compliant = state.shots.filter(s => 
+                    s.faceAngleInRange && s.clubPathInRange && s.faceToPathInRange
+                ).length;
+                const rate = Math.round((compliant / state.shots.length) * 100);
+                elements.complianceRate.textContent = `${rate}%`;
+            } else {
+                elements.complianceRate.textContent = '0%';
+            }
+
+            // Show/hide shots card
+            elements.shotsCard.style.display = state.shots.length > 0 ? 'block' : 'none';
+        }
+
+        // Render shot list
+        function renderShotList() {
+            if (state.shots.length === 0) {
+                elements.shotList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <p>No shots recorded yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            elements.shotList.innerHTML = state.shots.map((shot, index) => {
+                const allInRange = shot.faceAngleInRange && shot.clubPathInRange && shot.faceToPathInRange;
+                return `
+                    <div class="shot-item ${allInRange ? 'in-range' : 'out-range'}">
+                        <span class="shot-number">${index + 1}</span>
+                        <div class="shot-metrics">
+                            <div class="shot-metric"><strong>FA:</strong> ${shot.faceAngle >= 0 ? '+' : ''}${shot.faceAngle.toFixed(1)}°</div>
+                            <div class="shot-metric"><strong>CP:</strong> ${shot.clubPath >= 0 ? '+' : ''}${shot.clubPath.toFixed(1)}°</div>
+                        </div>
+                        <div class="shot-f2p">${shot.faceToPath >= 0 ? '+' : ''}${shot.faceToPath.toFixed(1)}°</div>
+                        <span class="shot-badge ${allInRange ? 'success' : 'missed'}">
+                            ${allInRange ? '✓' : '✗'}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Complete session
+        function completeSession() {
+            if (state.shots.length < 10) {
+                if (!confirm('You have fewer than 10 shots. Complete session anyway?')) {
+                    return;
+                }
+            }
+
+            const level = SKILL_LEVELS[state.currentLevel - 1];
+            
+            // Calculate averages
+            const avgFaceAngle = state.shots.reduce((sum, s) => sum + s.faceAngle, 0) / state.shots.length;
+            const avgClubPath = state.shots.reduce((sum, s) => sum + s.clubPath, 0) / state.shots.length;
+            const avgFaceToPath = state.shots.reduce((sum, s) => sum + s.faceToPath, 0) / state.shots.length;
+
+            // Calculate compliance percentages
+            const faCompliance = Math.round((state.shots.filter(s => s.faceAngleInRange).length / state.shots.length) * 100);
+            const cpCompliance = Math.round((state.shots.filter(s => s.clubPathInRange).length / state.shots.length) * 100);
+            const f2pCompliance = Math.round((state.shots.filter(s => s.faceToPathInRange).length / state.shots.length) * 100);
+            const overallCompliance = Math.round((state.shots.filter(s => 
+                s.faceAngleInRange && s.clubPathInRange && s.faceToPathInRange
+            ).length / state.shots.length) * 100);
+
+            // Create session object
+            const session = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                skillLevel: state.currentLevel,
+                levelName: level.name,
+                shots: [...state.shots],
+                averages: {
+                    faceAngle: avgFaceAngle,
+                    clubPath: avgClubPath,
+                    faceToPath: avgFaceToPath
+                },
+                compliance: {
+                    faceAngle: faCompliance,
+                    clubPath: cpCompliance,
+                    faceToPath: f2pCompliance,
+                    overall: overallCompliance
+                }
+            };
+
+            // Save to history
+            state.history.unshift(session);
+            saveHistory();
+
+            // Display summary
+            displaySummary(session);
+        }
+
+        // Display session summary
+        function displaySummary(session) {
+            // Hide entry card, show summary
+            document.getElementById('entry-card').style.display = 'none';
+            document.getElementById('shots-card').style.display = 'none';
+            document.getElementById('summary-card').style.display = 'block';
+
+            // Update averages
+            document.getElementById('avg-fa').textContent = `${session.averages.faceAngle >= 0 ? '+' : ''}${session.averages.faceAngle.toFixed(1)}°`;
+            document.getElementById('avg-cp').textContent = `${session.averages.clubPath >= 0 ? '+' : ''}${session.averages.clubPath.toFixed(1)}°`;
+            document.getElementById('avg-f2p').textContent = `${session.averages.faceToPath >= 0 ? '+' : ''}${session.averages.faceToPath.toFixed(1)}°`;
+
+            // Update compliance grid
+            const complianceData = [
+                { name: 'Face Angle', value: session.compliance.faceAngle, threshold: SKILL_LEVELS[state.currentLevel - 1].faceAngle },
+                { name: 'Club Path', value: session.compliance.clubPath, threshold: SKILL_LEVELS[state.currentLevel - 1].clubPath },
+                { name: 'Face to Path', value: session.compliance.faceToPath, threshold: SKILL_LEVELS[state.currentLevel - 1].faceToPath }
+            ];
+
+            document.getElementById('compliance-grid').innerHTML = complianceData.map(item => {
+                const valueClass = item.value >= 80 ? 'success' : item.value >= 60 ? 'warning' : 'danger';
+                const barClass = item.value >= 80 ? 'success' : item.value >= 60 ? 'warning' : 'danger';
+                return `
+                    <div class="compliance-item">
+                        <div class="compliance-left">
+                            <span class="compliance-name">${item.name} (±${item.threshold}°)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="compliance-value ${valueClass}">${item.value}%</span>
+                            <div class="compliance-bar">
+                                <div class="compliance-fill ${barClass}" style="width: ${item.value}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update distribution bars
+            document.getElementById('dist-fa').style.width = `${session.compliance.faceAngle}%`;
+            document.getElementById('dist-cp').style.width = `${session.compliance.clubPath}%`;
+            document.getElementById('dist-f2p').style.width = `${session.compliance.faceToPath}%`;
+
+            // Assessment
+            let assessment;
+            if (session.compliance.overall >= 80) {
+                assessment = {
+                    type: 'passed',
+                    title: 'Excellent Direction Control',
+                    message: `Your overall compliance of ${session.compliance.overall}% meets the advancement criteria for Level ${state.currentLevel}. Continue practicing to maintain this level of consistency.`
+                };
+            } else if (session.compliance.overall >= 60) {
+                assessment = {
+                    type: 'conditional',
+                    title: 'Approaching Target',
+                    message: `Your overall compliance of ${session.compliance.overall}% shows progress. Focus on the metrics below 80% to reach the advancement threshold for Level ${state.currentLevel}.`
+                };
+            } else {
+                assessment = {
+                    type: 'failed',
+                    title: 'Additional Practice Recommended',
+                    message: `Your overall compliance of ${session.compliance.overall}% is below the 80% threshold. Consider returning to Level ${Math.max(1, state.currentLevel - 1)} to rebuild fundamentals.`
+                };
+            }
+
+            document.getElementById('assessment').innerHTML = `
+                <div class="assessment ${assessment.type}">
+                    <h4>${assessment.title}</h4>
+                    <p>${assessment.message}</p>
+                </div>
+            `;
+        }
+
+        // Start new session
+        function newSession() {
+            state.shots = [];
+            
+            // Reset UI
+            document.getElementById('entry-card').style.display = 'block';
+            document.getElementById('shots-card').style.display = 'none';
+            document.getElementById('summary-card').style.display = 'none';
+            
+            elements.faceAngle.value = '';
+            elements.clubPath.value = '';
+            calculateFaceToPath();
+            updateProgress();
+            
+            // Switch to test tab
+            elements.navTabs.forEach(t => t.classList.remove('active'));
+            elements.navTabs[0].classList.add('active');
+            elements.sections.forEach(s => s.classList.remove('active'));
+            document.getElementById('test-section').classList.add('active');
+        }
+
+        // View history
+        function viewHistory() {
+            elements.navTabs.forEach(t => t.classList.remove('active'));
+            elements.navTabs[1].classList.add('active');
+            elements.sections.forEach(s => s.classList.remove('active'));
+            document.getElementById('history-section').classList.add('active');
+            renderHistory();
+        }
+
+        // Render history
+        function renderHistory() {
+            let filtered = [...state.history];
+
+            // Filter by level
+            const filterLevel = parseInt(elements.filterLevel.value);
+            if (filterLevel > 0) {
+                filtered = filtered.filter(s => s.skillLevel === filterLevel);
+            }
+
+            // Sort
+            const sortBy = elements.filterSort.value;
+            if (sortBy === 'date-desc') {
+                filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else if (sortBy === 'date-asc') {
+                filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+            } else if (sortBy === 'compliance-desc') {
+                filtered.sort((a, b) => b.compliance.overall - a.compliance.overall);
+            }
+
+            if (filtered.length === 0) {
+                elements.historyList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No sessions recorded yet.<br>Complete a session to see your history.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            elements.historyList.innerHTML = filtered.map(session => {
+                const date = new Date(session.date);
+                return `
+                    <div class="history-item" onclick="viewSessionDetails(${session.id})">
+                        <div class="history-header">
+                            <span class="history-date">${date.toLocaleDateString('en-US', { 
+                                month: 'short', day: 'numeric', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                            })}</span>
+                            <span class="history-score">${session.compliance.overall}%</span>
+                        </div>
+                        <div class="history-details">
+                            <div class="history-detail">
+                                <strong>L${session.skillLevel}</strong> Level
+                            </div>
+                            <div class="history-detail">
+                                <strong>${session.averages.faceToPath >= 0 ? '+' : ''}${session.averages.faceToPath.toFixed(1)}°</strong> Avg F2P
+                            </div>
+                            <div class="history-detail">
+                                <strong>${session.shots.length}</strong> Shots
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filter history
+        function filterHistory() {
+            renderHistory();
+        }
+
+        // Sort history
+        function sortHistory() {
+            renderHistory();
+        }
+
+        // View session details
+        function viewSessionDetails(sessionId) {
+            const session = state.history.find(s => s.id === sessionId);
+            if (!session) return;
+
+            // Temporarily set current level and display summary
+            const savedLevel = state.currentLevel;
+            state.currentLevel = session.skillLevel;
+            
+            // Update entry card to show summary
+            document.getElementById('entry-card').style.display = 'block';
+            document.getElementById('shots-card').style.display = 'none';
+            document.getElementById('summary-card').style.display = 'none';
+            
+            // Hide input elements, show summary
+            document.querySelector('#entry-card .progress-container').style.display = 'none';
+            document.querySelector('#entry-card .input-row').style.display = 'none';
+            document.querySelector('#entry-card .calc-display').style.display = 'none';
+            document.querySelector('#entry-card .btn-group').style.display = 'none';
+            
+            displaySummary(session);
+            
+            // Switch to test tab
+            elements.navTabs.forEach(t => t.classList.remove('active'));
+            elements.navTabs[0].classList.add('active');
+            elements.sections.forEach(s => s.classList.remove('active'));
+            document.getElementById('test-section').classList.add('active');
+        }
+
+        // Render benchmarks
+        function renderBenchmarks() {
+            // Current level info
+            const level = SKILL_LEVELS[state.currentLevel - 1];
+            const recentSessions = state.history.filter(s => s.skillLevel === state.currentLevel);
+            
+            let avgCompliance = '--';
+            if (recentSessions.length > 0) {
+                avgCompliance = Math.round(recentSessions.reduce((sum, s) => sum + s.compliance.overall, 0) / recentSessions.length);
+            }
+
+            elements.currentLevelInfo.innerHTML = `
+                <div class="benchmark-card">
+                    <div class="benchmark-header">
+                        <span class="benchmark-level">Level ${state.currentLevel} — ${level.name}</span>
+                        <span class="benchmark-status ${avgCompliance !== '--' && avgCompliance >= 80 ? 'qualified' : 'unqualified'}">
+                            ${avgCompliance !== '--' ? avgCompliance + '% avg' : 'No data'}
+                        </span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                        Target: 80% compliance on all three metrics (±${level.faceAngle}° FA, ±${level.clubPath}° CP, ±${level.faceToPath}° F2P)
+                    </p>
+                </div>
+            `;
+
+            // All levels benchmark
+            let benchmarkHTML = '<h4 style="font-family: Cormorant Garamond, Georgia, serif; font-size: 16px; margin-bottom: 16px; color: var(--charcoal);">Level Requirements</h4>';
+            
+            SKILL_LEVELS.forEach(l => {
+                const sessions = state.history.filter(s => s.skillLevel === l.level);
+                const avgOverall = sessions.length > 0 
+                    ? Math.round(sessions.reduce((sum, s) => sum + s.compliance.overall, 0) / sessions.length)
+                    : '--';
+                const qualified = sessions.length > 0 && avgOverall >= 80;
+                
+                benchmarkHTML += `
+                    <div class="benchmark-card">
+                        <div class="benchmark-header">
+                            <span class="benchmark-level">L${l.level} — ${l.name}</span>
+                            <span class="benchmark-status ${qualified ? 'qualified' : 'unqualified'}">
+                                ${avgOverall !== '--' ? avgOverall + '%' : 'N/A'}
+                            </span>
+                        </div>
+                        <div class="benchmark-table">
+                            <div class="benchmark-row header">
+                                <span>Metric</span>
+                                <span>You</span>
+                                <span>Target</span>
+                            </div>
+                            <div class="benchmark-row">
+                                <span class="benchmark-metric">Face Angle</span>
+                                <span class="benchmark-you">${avgOverall !== '--' ? '80%' : '--'}</span>
+                                <span class="benchmark-target">80%</span>
+                            </div>
+                            <div class="benchmark-row">
+                                <span class="benchmark-metric">Club Path</span>
+                                <span class="benchmark-you">${avgOverall !== '--' ? '80%' : '--'}</span>
+                                <span class="benchmark-target">80%</span>
+                            </div>
+                            <div class="benchmark-row">
+                                <span class="benchmark-metric">Face to Path</span>
+                                <span class="benchmark-you">${avgOverall !== '--' ? '80%' : '--'}</span>
+                                <span class="benchmark-target">80%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            elements.benchmarkList.innerHTML = benchmarkHTML;
+        }
+    </script>
+</body>
+</html>
